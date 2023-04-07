@@ -8,7 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"common"
-	"common/convert"
 	"common/data"
 	"common/data/model"
 	"common/data/store"
@@ -135,7 +134,6 @@ func toNewsChannelsBatch(newsBatch []model.News, channels []model.Channel) []mod
 		for _, c := range channels {
 			newsChannels[i] = model.NewsChannel{
 				ChannelID: c.ChannelID,
-				Status:    convert.ToPtr(model.StatusPending),
 				NewsID:    n.ID,
 			}
 			i++

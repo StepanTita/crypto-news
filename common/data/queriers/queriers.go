@@ -25,6 +25,10 @@ type Updater[U model.Model, T model.Model] interface {
 	Update(ctx context.Context, entity U) ([]T, error)
 }
 
+type Remover[T model.Model] interface {
+	Remove(ctx context.Context, entity T) error
+}
+
 type NewsProvider interface {
 	Inserter[model.News]
 	Getter[model.News]
@@ -33,11 +37,11 @@ type NewsProvider interface {
 	BySource(ctx context.Context, source string) NewsProvider
 	ByIDs(ctx context.Context, ids []uuid.UUID) NewsProvider
 
-	GetLatest(ctx context.Context) (*model.News, error)
-}
+	// ByCoins TODO: maybe implement results filtering by coins later (but this might slow down,
+	// since then we need to get news for each channel independently
+	ByCoins(ctx context.Context, codes []string) NewsProvider
 
-type UserProvider interface {
-	Inserter[model.User]
+	GetLatest(ctx context.Context) (*model.News, error)
 }
 
 type CoinsProvider interface {
@@ -56,10 +60,23 @@ type NewsCoinsProvider interface {
 type NewsChannelsProvider interface {
 	Inserter[model.NewsChannel]
 	Selector[model.NewsChannel]
-	Updater[model.UpdateNewsChannelParams, model.NewsChannel]
+	Remover[model.NewsChannel]
 
-	ByStatus(ctx context.Context, source string) NewsChannelsProvider
-
-	// orders by priority
+	// Ordered orders by priority
 	Ordered(ctx context.Context) NewsChannelsProvider
+}
+
+type PreferencesChannelCoinsProvider interface {
+	Inserter[model.PreferencesChannelCoin]
+	Selector[model.PreferencesChannelCoin]
+	Remover[model.PreferencesChannelCoin]
+
+	ByChannel(channelID int64) PreferencesChannelCoinsProvider
+}
+
+// No-SQL
+type AuthorizationKeysProvider interface {
+	Inserter[model.AuthorizationKeys]
+	Getter[model.AuthorizationKeys]
+	Remover[model.AuthorizationKeys]
 }

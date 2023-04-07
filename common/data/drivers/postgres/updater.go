@@ -30,7 +30,7 @@ type updater[U, T model.Model] struct {
 func NewUpdater[U, T model.Model](ext sqlx.ExtContext, log *logrus.Entry) Updater[U, T] {
 	var entity U
 	return &updater[U, T]{
-		log: log.WithField("service", "[INSERTER]"),
+		log: log.WithField("service", "[updater]"),
 		ext: ext,
 
 		sql: sq.Update(entity.TableName()),
@@ -47,7 +47,7 @@ func (u updater[U, T]) Update(ctx context.Context, entity U) ([]T, error) {
 
 	rows, err := u.ext.QueryxContext(ctx, u.ext.Rebind(sql), args...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to update entity: %selector", entity.TableName())
+		return nil, errors.Wrapf(err, "failed to update entity: %s", entity.TableName())
 	}
 
 	updatedEntities := make([]T, 0, 10)

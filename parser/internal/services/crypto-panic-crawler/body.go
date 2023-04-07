@@ -66,8 +66,8 @@ func (b Body) ToNews() model.News {
 
 	return model.News{
 		Media: &model.NewsMedia{
-			Title: b.Title,
-			Text:  description,
+			Title: utils.StripHtmlRegex(b.Title),
+			Text:  utils.StripHtmlRegex(description),
 			Resources: []model.NewsMediaResource{
 				{
 					Type: convert.ToPtr(utils.ImageType),

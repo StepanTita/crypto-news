@@ -27,6 +27,7 @@ type yamlConfig struct {
 	RateLimit        int                          `yaml:"rate_limit"`
 	CrawlEvery       time.Duration                `yaml:"crawl_every"`
 	Database         commoncfg.YamlDatabaseConfig `yaml:"database"`
+	KVStore          commoncfg.YamlKVStoreConfig  `yaml:"kv_store"`
 	ServiceProviders yamlServiceProviderConfig    `yaml:"service_providers"`
 	Runtime          commoncfg.YamlRuntimeConfig  `yaml:"runtime"`
 }
@@ -45,7 +46,7 @@ func New(path string) Config {
 	}
 
 	return &config{
-		Config:          commoncfg.New(cfg.LogLevel, cfg.Runtime, cfg.Database),
+		Config:          commoncfg.New(cfg.LogLevel, cfg.Runtime, cfg.Database, cfg.KVStore),
 		Crawler:         NewCrawler(cfg.RateLimit, cfg.CrawlEvery),
 		ServiceProvider: NewServiceProvider(cfg.ServiceProviders),
 	}

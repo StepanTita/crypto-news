@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"common/data"
 	"common/data/model"
 	"common/data/store"
 	"telegram-bot/internal/config"
@@ -37,13 +38,16 @@ func New(cfg config.Config) Handler {
 func (h handler) HandleCommand(ctx context.Context, incomingMsg *tgbotapi.Message) (*tgbotapi.MessageConfig, error) {
 	msg := tgbotapi.NewMessage(incomingMsg.Chat.ID, "")
 
-	switch incomingMsg.Command() {
+	switch utils.Command(incomingMsg.Command()) {
 	case utils.StartCommand:
-		msg.Text = fmt.Sprintf(h.templator.Template(utils.StartCommand), incomingMsg.From.UserName)
+		msg.Text = fmt.Sprintf(h.templator.Template(utils.StartCommand.String()), incomingMsg.From.UserName)
 	case utils.SubscribeCommand:
-		msg.Text = fmt.Sprintf(h.templator.Template(utils.SubscribeCommand))
+		msg.Text = fmt.Sprintf(h.templator.Template(utils.SubscribeCommand.String()))
 		if err := h.handleSubscribe(ctx, incomingMsg.Chat.ID); err != nil {
-			return nil, errors.Wrap(err, "failed to subscribe channel")
+			if !errors.Is(err, data.ErrDuplicateRecord) {
+				return nil, errors.Wrap(err, "failed to subscribe channel")
+			}
+			msg.Text = "This channel was already registered!"
 		}
 	default:
 		msg.Text = "Sorry... I don't know that command, yet!"

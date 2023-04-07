@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"common/convert"
+	"common/data"
 	"common/data/model"
 	"common/data/store"
 	"telegram-bot/internal/config"
@@ -41,15 +42,16 @@ func New(cfg config.Config, bot *tgbotapi.BotAPI) Poster {
 }
 
 func (p poster) Post(ctx context.Context) (int, error) {
-
-	// TODO: remove processed, instead of status change
-	newsChannels, err := p.dataProvider.NewsChannelsProvider().ByStatus(ctx, model.StatusPending).Select(ctx)
+	newsChannels, err := p.dataProvider.NewsChannelsProvider().Select(ctx)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to select pending news-channels")
+		if !errors.Is(err, data.ErrNotFound) {
+			return 0, errors.Wrap(err, "failed to select pending news-channels")
+		}
 	}
 
 	newsIDs := make([]uuid.UUID, len(newsChannels))
 
+	// newsID : []newsChannels
 	newsChannelsMapping := make(map[uuid.UUID][]model.NewsChannel)
 	for i, newsChannel := range newsChannels {
 		newsIDs[i] = newsChannel.NewsID
@@ -59,7 +61,9 @@ func (p poster) Post(ctx context.Context) (int, error) {
 	newsIDs = utils.Unique(newsIDs)
 	news, err := p.dataProvider.NewsProvider().ByIDs(ctx, newsIDs).Select(ctx)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to select pending news")
+		if !errors.Is(err, data.ErrNotFound) {
+			return 0, errors.Wrap(err, "failed to select pending news")
+		}
 	}
 
 	count := 0
@@ -80,12 +84,9 @@ func (p poster) Post(ctx context.Context) (int, error) {
 		}
 	}
 
-	//_, err = p.dataProvider.NewsChannelsProvider().ByStatus(ctx, model.StatusPending).Update(ctx, model.UpdateNewsChannelParams{
-	//	Status: convert.ToPtr(model.StatusProcessed),
-	//})
-	//if err != nil {
-	//	return count, errors.Wrap(err, "failed to update news status to processed")
-	//}
+	if err := p.dataProvider.NewsChannelsProvider().Remove(ctx, model.NewsChannel{}); err != nil {
+		return count, errors.Wrap(err, "failed to remove entity")
+	}
 
 	return count, nil
 }

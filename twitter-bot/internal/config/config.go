@@ -11,25 +11,23 @@ import (
 
 type Config interface {
 	commoncfg.Config
+	Poster
 	Templator
-	Listener
 }
 
 type config struct {
 	commoncfg.Config
+	Poster
 	Templator
-	Listener
 }
 
 type yamlConfig struct {
-	LogLevel     string `yaml:"log_level"`
-	TemplatesDir string `yaml:"templates_dir"`
-	Telegram     struct {
-		ApiToken string `yaml:"api_token"`
-	} `yaml:"telegram"`
-	Database commoncfg.YamlDatabaseConfig `yaml:"database"`
-	KVStore  commoncfg.YamlKVStoreConfig  `yaml:"kv_store"`
-	Runtime  commoncfg.YamlRuntimeConfig  `yaml:"runtime"`
+	LogLevel     string                       `yaml:"log_level"`
+	TemplatesDir string                       `yaml:"templates_dir"`
+	Twitter      YamlPosterConfig             `yaml:"twitter"`
+	Database     commoncfg.YamlDatabaseConfig `yaml:"database"`
+	KVStore      commoncfg.YamlKVStoreConfig  `yaml:"kv_store"`
+	Runtime      commoncfg.YamlRuntimeConfig  `yaml:"runtime"`
 }
 
 func New(path string) Config {
@@ -48,6 +46,6 @@ func New(path string) Config {
 	return &config{
 		Config:    commoncfg.New(cfg.LogLevel, cfg.Runtime, cfg.Database, cfg.KVStore),
 		Templator: NewTemplator(cfg.TemplatesDir),
-		Listener:  NewListener(cfg.Telegram.ApiToken),
+		Poster:    NewPoster(cfg.Twitter),
 	}
 }

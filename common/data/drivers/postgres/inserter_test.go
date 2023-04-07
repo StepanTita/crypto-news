@@ -29,41 +29,6 @@ func createTestInserter[T model.Model](t *testing.T, log *logrus.Entry, db *sqlx
 	}
 }
 
-func InsertUser(t *testing.T, log *logrus.Entry, db *sqlx.DB) {
-	testInserter := createTestInserter[model.User](t, log, db)
-
-	ctx := context.Background()
-
-	expUser := &model.User{
-		Username:  convert.ToPtr("username"),
-		FirstName: convert.ToPtr("first_name"),
-		LastName:  convert.ToPtr("last_name"),
-	}
-
-	testCases := []struct {
-		name string
-		in   model.User
-		out  *model.User
-		err  error
-	}{
-		{
-			name: "ok user",
-			in:   *expUser,
-			out:  expUser,
-			err:  nil,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			u, err := testInserter.Insert(ctx, tc.in)
-			require.ErrorIs(t, err, tc.err)
-			drivers.TestEqualWithoutFields(t, tc.out, u, "ID", "CreatedAt")
-			require.NotEmpty(t, u.ID)
-		})
-	}
-}
-
 func InsertNews(t *testing.T, log *logrus.Entry, db *sqlx.DB) {
 	testInserter := createTestInserter[model.News](t, log, db)
 
@@ -104,56 +69,6 @@ func InsertNews(t *testing.T, log *logrus.Entry, db *sqlx.DB) {
 			require.ErrorIs(t, err, tc.err)
 			drivers.TestEqualWithoutFields(t, tc.out, u, "ID", "CreatedAt")
 			require.NotEmpty(t, u.ID)
-		})
-	}
-}
-
-func InsertUsersBatch(t *testing.T, log *logrus.Entry, db *sqlx.DB) {
-	testInserter := createTestInserter[model.User](t, log, db)
-
-	ctx := context.Background()
-
-	expUsers := []model.User{
-		{
-			Username:  convert.ToPtr("username1"),
-			FirstName: convert.ToPtr("first_name1"),
-			LastName:  convert.ToPtr("last_name1"),
-		},
-		{
-			Username:  convert.ToPtr("username2"),
-			FirstName: convert.ToPtr("first_name2"),
-			LastName:  convert.ToPtr("last_name2"),
-		},
-		{
-			Username:  convert.ToPtr("username3"),
-			FirstName: convert.ToPtr("first_name3"),
-			LastName:  convert.ToPtr("last_name3"),
-		},
-	}
-
-	testCases := []struct {
-		name string
-		in   []model.User
-		out  []model.User
-		err  error
-	}{
-		{
-			name: "ok user batch",
-			in:   expUsers,
-			out:  expUsers,
-			err:  nil,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			err := testInserter.InsertBatch(ctx, tc.in)
-			require.ErrorIs(t, err, tc.err)
-			for i, u := range tc.in {
-				drivers.TestEqualWithoutFields(t, tc.out[i], tc.in[i], "ID", "CreatedAt")
-				require.NotEmpty(t, u.ID)
-			}
-
 		})
 	}
 }
@@ -237,7 +152,7 @@ func InsertNewsBatch(t *testing.T, log *logrus.Entry, db *sqlx.DB) {
 
 func TestInserter(t *testing.T) {
 	suite := drivers.NewSuite(t)
-	suite.AddTests(InsertUser, InsertNews, InsertUsersBatch, InsertNewsBatch)
+	suite.AddTests(InsertNews, InsertNewsBatch)
 
 	suite.SetupSuite()
 	defer suite.CleanupSuite()

@@ -63,8 +63,6 @@ func (c CryptoPanicCrawler) Crawl(ctx context.Context) ([]crawler.ParsedBody, in
 			"kind":       []string{"news"},
 			"public":     []string{"true"},
 			"metadata":   []string{"true"},
-			//"filter": "important,rising",
-			//"currencies": "BTC,ETH,USDT,DOGE,BNB,XRP,MATIC,DOT,TON,NEAR,TWT,SFP,CHZ",
 			//"approved": []string{"true"},
 		},
 	})

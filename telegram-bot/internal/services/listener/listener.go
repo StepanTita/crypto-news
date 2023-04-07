@@ -65,7 +65,14 @@ func (l listener) Listen(ctx context.Context) error {
 		if update.Message.IsCommand() {
 			log.Debug("handling command...")
 			msg, err = l.handler.HandleCommand(ctx, update.Message)
+			if err != nil {
+				return errors.Wrap(err, "failed to handle command")
+			}
 			log.Debugf("command handled with output: %s", msg.Text)
+		}
+
+		if msg == nil {
+			continue
 		}
 
 		msg.ReplyToMessageID = update.Message.MessageID
@@ -86,21 +93,21 @@ func (l listener) configUpdates(bot *tgbotapi.BotAPI) (tgbotapi.ReplyKeyboardMar
 
 	commandsConfig := tgbotapi.NewSetMyCommands(
 		tgbotapi.BotCommand{
-			Command:     utils.StartCommand,
+			Command:     utils.StartCommand.String(),
 			Description: "start the interaction",
 		},
 		tgbotapi.BotCommand{
-			Command:     utils.SubscribeCommand,
+			Command:     utils.SubscribeCommand.String(),
 			Description: "subscribe current channel to the news",
 		},
 	)
 
 	buttonsConfig := tgbotapi.NewReplyKeyboard(
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(utils.StartCommand),
+			tgbotapi.NewKeyboardButton(utils.StartCommand.Command()),
 		),
 		tgbotapi.NewKeyboardButtonRow(
-			tgbotapi.NewKeyboardButton(utils.SubscribeCommand),
+			tgbotapi.NewKeyboardButton(utils.SubscribeCommand.Command()),
 		),
 	)
 

@@ -20,6 +20,8 @@ type Selector[T model.Model] interface {
 
 	WithExpr(expr sq.Sqlizer) Selector[T]
 
+	Join(to string, on sq.Sqlizer) Selector[T]
+
 	Limit(l uint64) Selector[T]
 	Order(by, order string) Selector[T]
 }
@@ -28,8 +30,6 @@ type selector[T model.Model] struct {
 	log *logrus.Entry
 	ext sqlx.ExtContext
 
-	//TODO: can use that instead of db to support transactions
-	//ext sqlx.Ext
 	expr sq.Sqlizer
 	sql  sq.SelectBuilder
 }
@@ -56,7 +56,7 @@ func (s selector[T]) Select(ctx context.Context) ([]T, error) {
 
 	rows, err := s.ext.QueryxContext(ctx, s.ext.Rebind(sql), args...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to insert entities into table: %selector", entity.TableName())
+		return nil, errors.Wrapf(err, "failed to select entities from table: %s", entity.TableName())
 	}
 
 	entities := make([]T, 0, 10)
@@ -78,6 +78,11 @@ func (s selector[T]) Select(ctx context.Context) ([]T, error) {
 
 func (s selector[T]) WithExpr(expr sq.Sqlizer) Selector[T] {
 	s.expr = expr
+	return s
+}
+
+func (s selector[T]) Join(to string, on sq.Sqlizer) Selector[T] {
+	s.sql = s.sql.LeftJoin(to, on)
 	return s
 }
 

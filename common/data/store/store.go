@@ -4,34 +4,36 @@ import (
 	"context"
 	"database/sql"
 
+	rediscli "github.com/go-redis/redis"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"common/data/drivers/postgres/channels"
 	"common/data/drivers/postgres/news_channels"
+	"common/data/drivers/postgres/preferences_channel_coins"
+	"common/data/drivers/redis/authorization_keys"
 
 	"common/config"
 	"common/data/drivers/postgres/coins"
 	"common/data/drivers/postgres/news"
 	"common/data/drivers/postgres/news_coins"
-	"common/data/drivers/postgres/users"
 	"common/data/queriers"
 )
 
 type DataProvider interface {
+	// SQL
 	NewsProvider() queriers.NewsProvider
-	UsersProvider() queriers.UserProvider
 	CoinsProvider() queriers.CoinsProvider
 	ChannelsProvider() queriers.ChannelsProvider
 	NewsCoinsProvider() queriers.NewsCoinsProvider
 	NewsChannelsProvider() queriers.NewsChannelsProvider
+	PreferencesChannelCoinsProvider() queriers.PreferencesChannelCoinsProvider
 
 	InTx(ctx context.Context, fn func(dp DataProvider) error) error
-}
 
-func (d dataProvider) UsersProvider() queriers.UserProvider {
-	return users.New(d.ext(), d.log)
+	// No-SQL
+	AuthorizationKeysProvider() queriers.AuthorizationKeysProvider
 }
 
 func (d dataProvider) NewsProvider() queriers.NewsProvider {
@@ -54,6 +56,10 @@ func (d dataProvider) NewsChannelsProvider() queriers.NewsChannelsProvider {
 	return news_channels.New(d.ext(), d.log)
 }
 
+func (d dataProvider) PreferencesChannelCoinsProvider() queriers.PreferencesChannelCoinsProvider {
+	return preferences_channel_coins.New(d.ext(), d.log)
+}
+
 func (d dataProvider) InTx(ctx context.Context, fn func(dp DataProvider) error) error {
 	tx, err := d.db.BeginTxx(ctx, &sql.TxOptions{
 		Isolation: 0,
@@ -74,11 +80,17 @@ func (d dataProvider) InTx(ctx context.Context, fn func(dp DataProvider) error) 
 	return nil
 }
 
+func (d dataProvider) AuthorizationKeysProvider() queriers.AuthorizationKeysProvider {
+	return authorization_keys.New(d.kvStore, d.log)
+}
+
 type dataProvider struct {
-	log  *logrus.Entry
-	db   *sqlx.DB
-	tx   *sqlx.Tx
-	inTx bool
+	log *logrus.Entry
+	db  *sqlx.DB
+	tx  *sqlx.Tx
+
+	kvStore *rediscli.Client
+	inTx    bool
 }
 
 func New(cfg config.Config) DataProvider {

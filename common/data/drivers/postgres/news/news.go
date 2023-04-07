@@ -48,6 +48,11 @@ func (n news) ByIDs(ctx context.Context, ids []uuid.UUID) queriers.NewsProvider 
 	return n
 }
 
+func (n news) ByCoins(ctx context.Context, codes []string) queriers.NewsProvider {
+	n.Selector = n.Selector.Join("news_coins", sq.Eq{"news_coins.code": codes})
+	return n
+}
+
 func (n news) GetLatest(ctx context.Context) (*model.News, error) {
 	n.Getter = n.Getter.Order("published_at", common.OrderDesc)
 	return n.Get(ctx)

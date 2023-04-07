@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS channels
 (
     channel_id bigint PRIMARY KEY,
     created_at timestamp DEFAULT now(),
+    platform   text,
     priority   bigserial NOT NULL
 );
 
@@ -50,11 +51,19 @@ CREATE TABLE IF NOT EXISTS news_channels
     id         uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     channel_id bigint REFERENCES channels (channel_id),
     news_id    uuid NOT NULL REFERENCES news (id),
-    status     text,
     UNIQUE (channel_id, news_id)
 );
 
+CREATE TABLE IF NOT EXISTS preferences_channel_coins
+(
+    channel_id bigint REFERENCES channels (channel_id),
+    coin_code  text NOT NULL REFERENCES coins (code),
+    PRIMARY KEY (channel_id, coin_code)
+);
+
 -- +migrate Down
+DROP TABLE IF EXISTS preferences_regions;
+DROP TABLE IF EXISTS regions;
 DROP TABLE IF EXISTS news_channels;
 DROP TABLE IF EXISTS news_coins;
 DROP TABLE IF EXISTS channels;

@@ -6,12 +6,14 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	sq "github.com/Masterminds/squirrel"
 
+	"common/data"
 	"common/data/model"
 	"common/data/queriers"
 )
@@ -30,7 +32,7 @@ type inserter[T model.Model] struct {
 func NewInserter[T model.Model](ext sqlx.ExtContext, log *logrus.Entry) Inserter[T] {
 	var entity T
 	return &inserter[T]{
-		log: log.WithField("service", "[INSERTER]"),
+		log: log.WithField("service", "[inserter]"),
 		ext: ext,
 		sql: sq.Insert(entity.TableName()),
 	}
@@ -44,7 +46,11 @@ func (i inserter[T]) Insert(ctx context.Context, entity T) (*T, error) {
 
 	rows, err := i.ext.QueryxContext(ctx, i.ext.Rebind(sql), args...)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to insert entity into table: %selector", entity.TableName())
+		if err, ok := err.(*pq.Error); ok && err.Code == ErrCodeUniqueViolation {
+			// Here err is of type *pq.Error, you may inspect all its fields, e.g.:
+			return nil, data.ErrDuplicateRecord
+		}
+		return nil, errors.Wrapf(err, "failed to insert entity into table: %s", entity.TableName())
 	}
 
 	for rows.Next() {
@@ -68,7 +74,7 @@ func (i inserter[T]) InsertBatch(ctx context.Context, entities []T) error {
 
 	rows, err := sqlx.NamedQueryContext(ctx, i.ext, i.ext.Rebind(sql), entities)
 	if err != nil {
-		return errors.Wrapf(err, "failed to insert entity into table: %selector", tableName)
+		return errors.Wrapf(err, "failed to insert entity into table: %s", tableName)
 	}
 
 	idx := 0

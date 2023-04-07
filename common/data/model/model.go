@@ -2,12 +2,15 @@ package model
 
 import (
 	"fmt"
+	"strings"
+
+	"github.com/google/uuid"
 
 	"common"
 )
 
 type Model interface {
-	News | User | Coin | Channel | NewsCoin | NewsChannel | UpdateNewsChannelParams
+	News | Coin | Channel | NewsCoin | NewsChannel | PreferencesChannelCoin | AuthorizationKeys
 	TableName() string
 }
 
@@ -22,7 +25,7 @@ func ToMap[T Model](v T) map[string]any {
 func Columns[T Model](v T, skipNil bool) []string {
 	columnsMap := common.StructTagsMap(v, skipNil)
 	columns := make([]string, 0, len(columnsMap))
-	for k, _ := range columnsMap {
+	for k := range columnsMap {
 		columns = append(columns, k)
 	}
 	return columns
@@ -36,4 +39,12 @@ func NamedBinding[T Model](v T) ([]string, []string) {
 		namedColumns[i] = fmt.Sprintf(":%s", v)
 	}
 	return columns, namedColumns
+}
+
+func ToKey[T Model](i T, unique bool) string {
+	basicTypeKey := strings.ReplaceAll(common.GetTypeName(i), ".", "/")
+	if unique {
+		return fmt.Sprintf("%s/%s", strings.ReplaceAll(basicTypeKey, ".", "/"), uuid.NewString())
+	}
+	return basicTypeKey
 }
