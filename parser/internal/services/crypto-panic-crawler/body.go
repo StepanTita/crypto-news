@@ -5,7 +5,7 @@ import (
 
 	"common/convert"
 	"common/data/model"
-	"crypto-news/internal/utils"
+	"parser/internal/utils"
 )
 
 type Body struct {
@@ -78,6 +78,7 @@ func (b Body) ToNews() model.News {
 		PublishedAt:    b.PublishedAt,
 		Url:            url,
 		Source:         convert.ToPtr(utils.CryptoPanic),
+		Status:         convert.ToPtr(model.StatusPending),
 		OriginalSource: b.Source.Url,
 		Coins:          utils.Map(b.Currencies, toCoin),
 	}

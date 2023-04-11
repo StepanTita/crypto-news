@@ -10,7 +10,7 @@ import (
 )
 
 type Model interface {
-	News | Coin | Channel | NewsCoin | NewsChannel | PreferencesChannelCoin | AuthorizationKeys
+	News | Coin | Channel | NewsCoin | NewsChannel | PreferencesChannelCoin | UpdateNewsParams
 	TableName() string
 }
 
@@ -41,7 +41,7 @@ func NamedBinding[T Model](v T) ([]string, []string) {
 	return columns, namedColumns
 }
 
-func ToKey[T Model](i T, unique bool) string {
+func ToKey(i any, unique bool) string {
 	basicTypeKey := strings.ReplaceAll(common.GetTypeName(i), ".", "/")
 	if unique {
 		return fmt.Sprintf("%s/%s", strings.ReplaceAll(basicTypeKey, ".", "/"), uuid.NewString())

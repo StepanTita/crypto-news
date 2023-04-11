@@ -1,8 +1,6 @@
 package news_channels
 
 import (
-	"context"
-
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
@@ -37,7 +35,7 @@ func New(ext sqlx.ExtContext, log *logrus.Entry) queriers.NewsChannelsProvider {
 	}
 }
 
-func (n newsChannels) Ordered(ctx context.Context) queriers.NewsChannelsProvider {
+func (n newsChannels) Ordered() queriers.NewsChannelsProvider {
 	n.Selector = n.Order("priority", common.OrderAsc)
 	return n
 }

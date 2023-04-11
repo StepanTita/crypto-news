@@ -12,6 +12,7 @@ type Config interface {
 	Databaser
 	KVStorer
 	Runtime
+	Templator
 }
 
 type config struct {
@@ -19,6 +20,7 @@ type config struct {
 	Databaser
 	KVStorer
 	Runtime
+	Templator
 }
 
 type yamlConfig struct {
@@ -53,5 +55,6 @@ func New(logLevel string, runtime YamlRuntimeConfig, database YamlDatabaseConfig
 		Runtime:   NewRuntime(runtime.Environment, runtime.Version),
 		Databaser: NewDatabaser(database),
 		KVStorer:  NewKVStorer(kvStore),
+		Templator: NewTemplator(),
 	}
 }

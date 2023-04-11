@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"common"
+
 	"telegram-bot/internal/config"
 	"telegram-bot/internal/services/listener"
 	"telegram-bot/internal/services/poster"
@@ -48,7 +49,7 @@ func (s service) Run(ctx context.Context) error {
 		}
 	}()
 
-	s.log.Info("Staring poster bot service...")
+	s.log.Info("Staring telegram poster bot service...")
 	pst := poster.New(s.cfg, bot)
 
 	err = common.RunEvery(15*time.Second, func() error {

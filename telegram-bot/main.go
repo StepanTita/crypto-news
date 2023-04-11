@@ -3,12 +3,10 @@ package main
 import (
 	"os"
 
-	"common"
 	"telegram-bot/internal/cli"
 )
 
 func main() {
-	common.SetupWorkingDirectory()
 	if !cli.Run(os.Args) {
 		os.Exit(2)
 	}

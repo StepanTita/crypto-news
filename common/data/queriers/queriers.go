@@ -2,6 +2,7 @@ package queriers
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -33,13 +34,16 @@ type NewsProvider interface {
 	Inserter[model.News]
 	Getter[model.News]
 	Selector[model.News]
+	Updater[model.UpdateNewsParams, model.News]
 
-	BySource(ctx context.Context, source string) NewsProvider
-	ByIDs(ctx context.Context, ids []uuid.UUID) NewsProvider
+	ByStatus(status ...string) NewsProvider
+
+	BySource(source string) NewsProvider
+	ByIDs(ids []uuid.UUID) NewsProvider
 
 	// ByCoins TODO: maybe implement results filtering by coins later (but this might slow down,
 	// since then we need to get news for each channel independently
-	ByCoins(ctx context.Context, codes []string) NewsProvider
+	ByCoins(codes []string) NewsProvider
 
 	GetLatest(ctx context.Context) (*model.News, error)
 }
@@ -63,7 +67,7 @@ type NewsChannelsProvider interface {
 	Remover[model.NewsChannel]
 
 	// Ordered orders by priority
-	Ordered(ctx context.Context) NewsChannelsProvider
+	Ordered() NewsChannelsProvider
 }
 
 type PreferencesChannelCoinsProvider interface {
@@ -75,8 +79,13 @@ type PreferencesChannelCoinsProvider interface {
 }
 
 // No-SQL
-type AuthorizationKeysProvider interface {
-	Inserter[model.AuthorizationKeys]
-	Getter[model.AuthorizationKeys]
-	Remover[model.AuthorizationKeys]
+
+type KVProvider interface {
+	Get(ctx context.Context, key string) (string, error)
+	GetStruct(ctx context.Context, key string, out any) error
+
+	SetValue(ctx context.Context, key, value string, exp time.Duration) (string, error)
+	SetStruct(ctx context.Context, key string, value any, exp time.Duration) (string, error)
+
+	Remove(ctx context.Context, key string) error
 }

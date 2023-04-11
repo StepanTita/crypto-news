@@ -14,10 +14,10 @@ import (
 	"common/data"
 	"common/data/model"
 	"common/data/store"
-	"crypto-news/internal/config"
-	"crypto-news/internal/services/connector"
-	"crypto-news/internal/services/crawler"
-	"crypto-news/internal/utils"
+	"parser/internal/config"
+	"parser/internal/services/connector"
+	"parser/internal/services/crawler"
+	"parser/internal/utils"
 )
 
 type CryptoPanicCrawler struct {
@@ -46,7 +46,7 @@ func NewCrawler(cfg config.Config) crawler.Crawler {
 }
 
 func (c CryptoPanicCrawler) Crawl(ctx context.Context) ([]crawler.ParsedBody, int, error) {
-	latestNews, err := c.dataProvider.NewsProvider().BySource(ctx, utils.CryptoPanic).GetLatest(ctx)
+	latestNews, err := c.dataProvider.NewsProvider().BySource(utils.CryptoPanic).GetLatest(ctx)
 	if err != nil {
 		if !errors.Is(err, data.ErrNotFound) {
 			return nil, 0, errors.Wrap(err, "failed to query news provider by source")

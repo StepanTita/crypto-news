@@ -2,11 +2,11 @@ package config
 
 import (
 	"io/fs"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/pkg/errors"
+
+	"templates"
 )
 
 type Templator interface {
@@ -17,10 +17,10 @@ type templator struct {
 	templates map[string]string
 }
 
-func NewTemplator(templatesDir string) Templator {
-	templates := make(map[string]string)
+func NewTemplator() Templator {
+	templatesMapping := make(map[string]string)
 
-	err := filepath.WalkDir(templatesDir, func(path string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(templates.Dir, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return errors.Wrap(err, "failed to walk templates dir")
 		}
@@ -31,11 +31,11 @@ func NewTemplator(templatesDir string) Templator {
 
 		// expect name.command.tmpl
 		commandName := strings.Split(d.Name(), ".")[0]
-		rawContent, err := os.ReadFile(path)
+		rawContent, err := fs.ReadFile(templates.Dir, d.Name())
 		if err != nil {
 			return errors.Wrap(err, "failed to read file")
 		}
-		templates[commandName] = string(rawContent)
+		templatesMapping[commandName] = string(rawContent)
 
 		return nil
 	})
@@ -44,7 +44,7 @@ func NewTemplator(templatesDir string) Templator {
 	}
 
 	return &templator{
-		templates: templates,
+		templates: templatesMapping,
 	}
 }
 

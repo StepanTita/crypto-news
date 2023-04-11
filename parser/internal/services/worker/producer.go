@@ -3,7 +3,7 @@ package worker
 import (
 	"context"
 
-	"crypto-news/internal/services/crawler"
+	"parser/internal/services/crawler"
 )
 
 func (w worker) Produce(ctx context.Context, crawlers []crawler.Crawler) {

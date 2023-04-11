@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"crypto-news/internal/services/crawler"
+	"parser/internal/services/crawler"
 )
 
 type Task struct {

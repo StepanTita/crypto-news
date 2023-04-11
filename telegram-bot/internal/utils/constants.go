@@ -7,10 +7,6 @@ const (
 	SubscribeCommand Command = "subscribe"
 )
 
-const (
-	NewsPost = "news"
-)
-
 func (c Command) Command() string {
 	return "/" + string(c)
 }

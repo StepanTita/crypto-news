@@ -49,8 +49,8 @@ func isNillable(v reflect.Value) bool {
 
 func GetTypeName(v interface{}) string {
 	if t := reflect.TypeOf(v); t.Kind() == reflect.Ptr {
-		return t.Elem().Name()
+		return t.Elem().String()
 	} else {
-		return t.Name()
+		return t.String()
 	}
 }

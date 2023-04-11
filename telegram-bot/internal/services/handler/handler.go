@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	commoncfg "common/config"
 	"common/data"
 	"common/data/model"
 	"common/data/store"
@@ -21,7 +22,7 @@ type Handler interface {
 
 type handler struct {
 	log       *logrus.Entry
-	templator config.Templator
+	templator commoncfg.Templator
 
 	dataProvider store.DataProvider
 }

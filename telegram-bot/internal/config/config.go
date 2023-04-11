@@ -11,13 +11,11 @@ import (
 
 type Config interface {
 	commoncfg.Config
-	Templator
 	Listener
 }
 
 type config struct {
 	commoncfg.Config
-	Templator
 	Listener
 }
 
@@ -46,8 +44,7 @@ func New(path string) Config {
 	}
 
 	return &config{
-		Config:    commoncfg.New(cfg.LogLevel, cfg.Runtime, cfg.Database, cfg.KVStore),
-		Templator: NewTemplator(cfg.TemplatesDir),
-		Listener:  NewListener(cfg.Telegram.ApiToken),
+		Config:   commoncfg.New(cfg.LogLevel, cfg.Runtime, cfg.Database, cfg.KVStore),
+		Listener: NewListener(cfg.Telegram.ApiToken),
 	}
 }

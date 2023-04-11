@@ -12,7 +12,7 @@ import (
 	"common/data/drivers/postgres/channels"
 	"common/data/drivers/postgres/news_channels"
 	"common/data/drivers/postgres/preferences_channel_coins"
-	"common/data/drivers/redis/authorization_keys"
+	"common/data/drivers/redis/kv_provider"
 
 	"common/config"
 	"common/data/drivers/postgres/coins"
@@ -33,7 +33,7 @@ type DataProvider interface {
 	InTx(ctx context.Context, fn func(dp DataProvider) error) error
 
 	// No-SQL
-	AuthorizationKeysProvider() queriers.AuthorizationKeysProvider
+	KVProvider() queriers.KVProvider
 }
 
 func (d dataProvider) NewsProvider() queriers.NewsProvider {
@@ -80,8 +80,8 @@ func (d dataProvider) InTx(ctx context.Context, fn func(dp DataProvider) error) 
 	return nil
 }
 
-func (d dataProvider) AuthorizationKeysProvider() queriers.AuthorizationKeysProvider {
-	return authorization_keys.New(d.kvStore, d.log)
+func (d dataProvider) KVProvider() queriers.KVProvider {
+	return kv_provider.New(d.kvStore, d.log)
 }
 
 type dataProvider struct {
@@ -102,6 +102,8 @@ func New(cfg config.Config) DataProvider {
 		db:   cfg.DB(),
 		tx:   nil,
 		inTx: false,
+
+		kvStore: cfg.KVStore(),
 	}
 }
 

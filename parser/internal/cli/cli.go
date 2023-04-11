@@ -5,8 +5,8 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"crypto-news/internal/config"
-	"crypto-news/internal/services"
+	"parser/internal/config"
+	"parser/internal/services"
 )
 
 func Run(args []string) bool {

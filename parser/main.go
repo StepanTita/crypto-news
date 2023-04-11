@@ -3,12 +3,10 @@ package main
 import (
 	"os"
 
-	"common"
-	"crypto-news/internal/cli"
+	"parser/internal/cli"
 )
 
 func main() {
-	common.SetupWorkingDirectory()
 	if !cli.Run(os.Args) {
 		os.Exit(2)
 	}

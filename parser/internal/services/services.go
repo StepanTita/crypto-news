@@ -8,13 +8,14 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"common"
+
 	"common/data"
 	"common/data/model"
 	"common/data/store"
-	"crypto-news/internal/config"
-	"crypto-news/internal/services/crawler"
-	crypto_panic_crawler "crypto-news/internal/services/crypto-panic-crawler"
-	"crypto-news/internal/services/worker"
+	"parser/internal/config"
+	"parser/internal/services/crawler"
+	crypto_panic_crawler "parser/internal/services/crypto-panic-crawler"
+	"parser/internal/services/worker"
 )
 
 // TODO: add more when new sources added

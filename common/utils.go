@@ -1,8 +1,6 @@
 package common
 
 import (
-	"os"
-	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -27,19 +25,6 @@ func runFuncs(x time.Time, fs ...func() error) error {
 		}
 	}
 	return nil
-}
-
-func SetupWorkingDirectory() {
-	currDir, err := os.Getwd()
-	if err != nil {
-		panic(errors.Wrap(err, "failed to get current working directory"))
-	}
-
-	homeDir := "/crypto-news"
-	err = os.Chdir(currDir[:strings.Index(currDir, homeDir)] + homeDir)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to change current working directory"))
-	}
 }
 
 // CurrentTimestamp is a utility method to make sure UTC time is used all over the code

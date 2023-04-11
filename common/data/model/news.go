@@ -9,6 +9,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	StatusPending   = "pending"
+	StatusProcessed = "processed"
+	StatusFailed    = "failed"
+)
+
 type News struct {
 	ID          uuid.UUID  `db:"id,omitempty"`
 	CreatedAt   time.Time  `db:"created_at,omitempty"`
@@ -21,6 +27,8 @@ type News struct {
 
 	Source         *string `db:"source"`
 	OriginalSource *string `db:"original_source"`
+
+	Status *string `db:"status"`
 
 	Coins []Coin `db:"-"`
 }
@@ -53,4 +61,14 @@ func (a *NewsMedia) Scan(value any) error {
 	}
 
 	return json.Unmarshal(b, &a)
+}
+
+type UpdateNewsParams struct {
+	Status *string `db:"status"`
+
+	UpdatedAt *time.Time `db:"updated_at"`
+}
+
+func (n UpdateNewsParams) TableName() string {
+	return NEWS
 }

@@ -9,8 +9,8 @@ import (
 	"go.uber.org/atomic"
 	"golang.org/x/time/rate"
 
-	"crypto-news/internal/config"
-	"crypto-news/internal/services/crawler"
+	"parser/internal/config"
+	"parser/internal/services/crawler"
 )
 
 type Worker interface {

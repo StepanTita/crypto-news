@@ -13,9 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
 
-	"common"
 	commoncfg "common/config"
 	"common/data/model"
+
 	"migrator/migrate"
 )
 
@@ -37,8 +37,6 @@ func NewSuite(t *testing.T) *SuiteIntegrationTest {
 
 // SetupSuite Setup db value
 func (t *SuiteIntegrationTest) SetupSuite() {
-	common.SetupWorkingDirectory()
-
 	t.cfg = commoncfg.NewFromFile(testConfigPath)
 
 	// Migrate DB up

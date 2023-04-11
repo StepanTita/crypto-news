@@ -7,6 +7,10 @@ const (
 	OrderDesc = "desc"
 )
 
+const (
+	NewsPost = "news"
+)
+
 var (
 	BasicSqlizer = sq.Eq{"1": "1"}
 )

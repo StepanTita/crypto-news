@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"crypto-news/internal/config"
+	"parser/internal/config"
 )
 
 type Connector interface {

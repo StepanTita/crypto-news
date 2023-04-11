@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS news
     media           jsonb,
     url             text,
     source          text,
+    status          text,
     original_source text
 );
 
@@ -62,8 +63,7 @@ CREATE TABLE IF NOT EXISTS preferences_channel_coins
 );
 
 -- +migrate Down
-DROP TABLE IF EXISTS preferences_regions;
-DROP TABLE IF EXISTS regions;
+DROP TABLE IF EXISTS preferences_channel_coins;
 DROP TABLE IF EXISTS news_channels;
 DROP TABLE IF EXISTS news_coins;
 DROP TABLE IF EXISTS channels;

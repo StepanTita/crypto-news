@@ -9,6 +9,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	commonutils "common"
+	commoncfg "common/config"
+
 	"common/convert"
 	"common/data"
 	"common/data/model"
@@ -22,7 +25,7 @@ type Poster interface {
 }
 
 type poster struct {
-	templator config.Templator
+	templator commoncfg.Templator
 	log       *logrus.Entry
 
 	dataProvider store.DataProvider
@@ -32,7 +35,7 @@ type poster struct {
 
 func New(cfg config.Config, bot *tgbotapi.BotAPI) Poster {
 	return &poster{
-		log:       cfg.Logging().WithField("service", "[POSTER]"),
+		log:       cfg.Logging().WithField("service", "[TELEGRAM-POSTER]"),
 		templator: cfg,
 
 		dataProvider: store.New(cfg),
@@ -59,7 +62,7 @@ func (p poster) Post(ctx context.Context) (int, error) {
 	}
 
 	newsIDs = utils.Unique(newsIDs)
-	news, err := p.dataProvider.NewsProvider().ByIDs(ctx, newsIDs).Select(ctx)
+	news, err := p.dataProvider.NewsProvider().ByIDs(newsIDs).Select(ctx)
 	if err != nil {
 		if !errors.Is(err, data.ErrNotFound) {
 			return 0, errors.Wrap(err, "failed to select pending news")
@@ -71,7 +74,7 @@ func (p poster) Post(ctx context.Context) (int, error) {
 		for _, newsChannel := range newsChannelsMapping[n.ID] {
 			msg := tgbotapi.NewMessage(newsChannel.ChannelID, "")
 			msg.ParseMode = tgbotapi.ModeMarkdownV2
-			msg.Text = fmt.Sprintf(p.templator.Template(utils.NewsPost),
+			msg.Text = fmt.Sprintf(p.templator.Template(commonutils.NewsPost),
 				tgbotapi.EscapeText(tgbotapi.ModeMarkdownV2, convert.FromPtr(n.Media.Title)),
 				tgbotapi.EscapeText(tgbotapi.ModeMarkdownV2, convert.FromPtr(n.Media.Text)),
 				tgbotapi.EscapeText(tgbotapi.ModeMarkdownV2, convert.FromPtr(n.Source)))

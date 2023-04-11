@@ -1,0 +1,100 @@
+version: "3.9"
+services:
+  migrator:
+    build:
+      context: ..
+      dockerfile: migrator/Dockerfile
+    image: stepancons/crypto-news-migrator:latest
+    container_name: migrator
+    networks:
+      - default
+    volumes:
+      - type: bind
+        source: config.docker.local.yaml
+        target: /config.yaml
+    environment:
+      CONFIG: /config.yaml
+    depends_on:
+      - postgres_db
+    restart: on-failure
+    entrypoint: /bin/sh
+    command: -c "migrator migrate up"
+  parser:
+    build:
+      context: ..
+      dockerfile: parser/Dockerfile
+    image: stepancons/crypto-news-parser:latest
+    container_name: parser
+    networks:
+      - default
+    volumes:
+      - type: bind
+        source: config.docker.local.yaml
+        target: /config.yaml
+    environment:
+      CONFIG: /config.yaml
+    depends_on:
+      - migrator
+    restart: always
+    entrypoint: /bin/sh
+    command: -c "parser run"
+  telegram-bot:
+    build:
+      context: ..
+      dockerfile: telegram-bot/Dockerfile
+    image: stepancons/crypto-news-telegram-bot:latest
+    container_name: telegram-bot
+    networks:
+      - default
+    volumes:
+      - type: bind
+        source: config.docker.local.yaml
+        target: /config.yaml
+    environment:
+      CONFIG: /config.yaml
+    depends_on:
+      - migrator
+    restart: always
+    entrypoint: /bin/sh
+    command: -c "telegram-bot run"
+  twitter-bot:
+    build:
+      context: ..
+      dockerfile: twitter-bot/Dockerfile
+    image: stepancons/crypto-news-twitter-bot:latest
+    container_name: twitter-bot
+    networks:
+      - default
+    volumes:
+      - type: bind
+        source: config.docker.local.yaml
+        target: /config.yaml
+    ports:
+      - "8080:8080"
+    environment:
+      CONFIG: /config.yaml
+    depends_on:
+      - migrator
+    restart: always
+    entrypoint: /bin/sh
+    command: -c "twitter-bot run"
+  redis_db:
+    image: redis:7-alpine
+    hostname: redis_db
+    restart: always
+    command: redis-server --save 20 1 --loglevel warning # --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+    volumes:
+      - cache:/data
+  postgres_db:
+    image: postgres:14.5-alpine
+    hostname: postgres_db
+    restart: always
+    env_file:
+      - ../pg-variables.env
+    volumes:
+      - db:/var/lib/postgresql/data
+volumes:
+  db:
+    driver: local
+  cache:
+    driver: local

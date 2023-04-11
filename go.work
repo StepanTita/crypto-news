@@ -6,4 +6,5 @@ use (
 	migrator
 	telegram-bot
 	twitter-bot
+	templates
 )
