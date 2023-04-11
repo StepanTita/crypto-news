@@ -11,8 +11,6 @@ services:
         target: /config.yaml
     environment:
       CONFIG: /config.yaml
-    depends_on:
-      - postgres_db
     restart: on-failure
     entrypoint: /bin/sh
     command: -c "migrator migrate up"
@@ -73,14 +71,6 @@ services:
     command: redis-server --save 20 1 --loglevel warning # --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
     volumes:
       - cache:/data
-  postgres_db:
-    image: postgres:14.5-alpine
-    hostname: postgres_db
-    restart: always
-    env_file:
-      - ../pg-variables.env
-    volumes:
-      - db:/var/lib/postgresql/data
 volumes:
   db:
     driver: local

@@ -1,0 +1,69 @@
+name: Deploy to Amazon EC2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+env:
+  IMAGE_REPO: stepancons
+  IMAGE_TAG: ${{ github.sha }}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test all application
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.20
+
+      - name: Build
+        run: go build -v $(go list -f '{{.Dir}}/...' -m | xargs)
+
+      - name: Test
+        run: go test -v  $(go list -f '{{.Dir}}/...' -m | xargs)
+  push:
+    needs: test
+    name: Push to DockerHub
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build, tag, and push image to Docker Hub
+        id: build-image
+        env:
+          IMAGE_REPO: ${{ env.IMAGE_REPO }}
+          IMAGE_TAG: ${{ github.sha }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          chmod +x ./scripts/push-to-dockerhub.sh && ./scripts/push-to-dockerhub.sh
+  deploy:
+    needs: push
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    environment: dev
+
+    steps:
+      - name: Checkout the files
+        uses: actions/checkout@v3
+
+      - name: Copy code to server
+        env:
+          ENVIRONMENT: ${{ dev }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          TARGET: ${{ secrets.TARGET }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > private_key && chmod 600 private_key
+          chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh

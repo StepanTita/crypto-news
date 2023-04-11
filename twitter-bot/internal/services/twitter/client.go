@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/constraints"
 	"golang.org/x/oauth2"
 
 	commonutils "common"
@@ -61,12 +62,16 @@ func (t *twitterClient) PostTweet(ctx context.Context, news model.News) error {
 		}
 	}
 
-	body, err := json.Marshal(Tweet{
-		Text: fmt.Sprintf(t.templator.Template(commonutils.NewsPost),
+	tweet := Tweet{
+		// TODO: fix temporary workaround till we fix the markdown issue in twitter
+		Text: fmt.Sprintf(t.templator.Template(fmt.Sprintf("%s_%s", commonutils.NewsPost, "twitter")),
 			convert.FromPtr(news.Media.Title),
 			convert.FromPtr(news.Media.Text),
 			convert.FromPtr(news.Source)),
-	})
+	}
+	tweet.Text = tweet.Text[:Min(len(tweet.Text), 260)]
+
+	body, err := json.Marshal(tweet)
 	if err != nil {
 		return errors.Wrap(err, "failed to marshal tweet")
 	}
@@ -100,4 +105,11 @@ func (t *twitterClient) refresh(ctx context.Context) error {
 		return errors.Wrap(err, "failed to get token from redis store")
 	}
 	return nil
+}
+
+func Min[T constraints.Ordered](a, b T) T {
+	if a < b {
+		return a
+	}
+	return b
 }

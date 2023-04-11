@@ -1,0 +1,33 @@
+log_level: debug
+crawl_every: 15s
+rate_limit: 5
+database:
+  driver: postgres
+  host: localhost
+  user: postgres
+  password: test
+  name: dev
+  port: 6060
+  ssl_mode: disable
+kv_store:
+  address: localhost:6379
+#  password:
+service_providers:
+  services:
+    crypto_panic:
+      auth_token: ...
+      url: https://cryptopanic.com
+      path: /api/v1/posts/
+runtime:
+  environment: local
+  version: 0.0.1-alpha1
+templates_dir: ./templates/
+telegram:
+  api_token: ...
+twitter:
+  authenticator:
+    address: :8080
+    token_url: https://api.twitter.com/2/oauth2/token
+    auth_url: https://twitter.com/i/oauth2/authorize
+  api_key: ...
+  api_secret: ...

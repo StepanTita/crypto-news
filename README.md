@@ -8,3 +8,5 @@
      /              \
  twitter_bot   telegram_bot
 ```
+
+## TODO: tests and enable integration tests
