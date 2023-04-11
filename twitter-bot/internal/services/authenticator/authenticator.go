@@ -32,9 +32,9 @@ func New(cfg config.Config) Service {
 }
 
 func (l *service) Listen(ctx context.Context) error {
-	l.log.WithField("port", l.cfg.AuthAddress()).Info("Starting service...")
+	l.log.WithField("port", l.cfg.Port()).Info("Starting service...")
 
-	if err := http.ListenAndServe(l.cfg.AuthAddress(), l.router); err != nil {
+	if err := http.ListenAndServe(l.cfg.Port(), l.router); err != nil {
 		return errors.Wrap(err, "service failed")
 	}
 	return nil

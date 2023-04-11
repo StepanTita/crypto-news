@@ -20,9 +20,8 @@ type config struct {
 }
 
 type yamlConfig struct {
-	LogLevel     string `yaml:"log_level"`
-	TemplatesDir string `yaml:"templates_dir"`
-	Telegram     struct {
+	LogLevel string `yaml:"log_level"`
+	Telegram struct {
 		ApiToken string `yaml:"api_token"`
 	} `yaml:"telegram"`
 	Database commoncfg.YamlDatabaseConfig `yaml:"database"`

@@ -20,12 +20,11 @@ type config struct {
 }
 
 type yamlConfig struct {
-	LogLevel     string                       `yaml:"log_level"`
-	TemplatesDir string                       `yaml:"templates_dir"`
-	Twitter      YamlTwitterConfig            `yaml:"twitter"`
-	Database     commoncfg.YamlDatabaseConfig `yaml:"database"`
-	KVStore      commoncfg.YamlKVStoreConfig  `yaml:"kv_store"`
-	Runtime      commoncfg.YamlRuntimeConfig  `yaml:"runtime"`
+	LogLevel string                       `yaml:"log_level"`
+	Twitter  YamlTwitterConfig            `yaml:"twitter"`
+	Database commoncfg.YamlDatabaseConfig `yaml:"database"`
+	KVStore  commoncfg.YamlKVStoreConfig  `yaml:"kv_store"`
+	Runtime  commoncfg.YamlRuntimeConfig  `yaml:"runtime"`
 }
 
 func New(path string) Config {

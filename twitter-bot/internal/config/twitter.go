@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"golang.org/x/oauth2"
 )
@@ -10,6 +11,8 @@ type Twitter interface {
 	OAuthConfig() *oauth2.Config
 
 	AuthAddress() string
+	Port() string
+	Address() string
 }
 
 type YamlTwitterConfig struct {
@@ -45,7 +48,7 @@ func NewTwitter(posterConfig YamlTwitterConfig) Twitter {
 
 func (t twitter) OAuthConfig() *oauth2.Config {
 	return &oauth2.Config{
-		RedirectURL:  fmt.Sprintf("http://127.0.0.1%s/oauth/callback", t.authAddress),
+		RedirectURL:  fmt.Sprintf("http://%s/oauth/callback", t.authAddress),
 		ClientID:     t.apiKey,
 		ClientSecret: t.apiSecret,
 		Scopes:       []string{"tweet.read", "users.read", "tweet.write", "offline.access"},
@@ -59,4 +62,13 @@ func (t twitter) OAuthConfig() *oauth2.Config {
 
 func (t twitter) AuthAddress() string {
 	return t.authAddress
+}
+
+// TODO: add validation to config defintion
+func (t twitter) Port() string {
+	return strings.Split(t.authAddress, ":")[1] + ":"
+}
+
+func (t twitter) Address() string {
+	return strings.Split(t.authAddress, ":")[0]
 }
