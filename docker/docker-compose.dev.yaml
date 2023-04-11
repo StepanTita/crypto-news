@@ -7,7 +7,7 @@ services:
       - default
     volumes:
       - type: bind
-        source: config.docker.dev.yaml
+        source: $PWD/config.docker.dev.yaml
         target: /config.yaml
     environment:
       CONFIG: /config.yaml
@@ -21,7 +21,7 @@ services:
       - default
     volumes:
       - type: bind
-        source: config.docker.dev.yaml
+        source: $PWD/config.docker.dev.yaml
         target: /config.yaml
     environment:
       CONFIG: /config.yaml
@@ -37,7 +37,7 @@ services:
       - default
     volumes:
       - type: bind
-        source: config.docker.dev.yaml
+        source: $PWD/config.docker.dev.yaml
         target: /config.yaml
     environment:
       CONFIG: /config.yaml
@@ -53,7 +53,7 @@ services:
       - default
     volumes:
       - type: bind
-        source: config.docker.dev.yaml
+        source: $PWD/config.docker.dev.yaml
         target: /config.yaml
     ports:
       - "8080:8080"
