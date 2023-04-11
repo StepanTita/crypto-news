@@ -66,7 +66,7 @@ func (t twitter) AuthAddress() string {
 
 // TODO: add validation to config defintion
 func (t twitter) Port() string {
-	return strings.Split(t.authAddress, ":")[1] + ":"
+	return ":" + strings.Split(t.authAddress, ":")[1]
 }
 
 func (t twitter) Address() string {
