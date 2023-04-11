@@ -8,7 +8,8 @@ ssh -o StrictHostKeyChecking=no "${REMOTE_USER}"@"${REMOTE_HOST}" -i private_key
         git reset --hard origin/main
         git pull origin main &&
         cd ./docker &&
-        sudo docker-compose -f docker-compose.${ENVIRONMENT}.yaml down -v
-        sudo docker-compose -f docker-compose.${ENVIRONMENT}.yaml up -d
+        docker-compose -f docker-compose.${ENVIRONMENT}.yaml down -v
+        docker-compose -f docker-compose.${ENVIRONMENT}.yaml pull
+        docker-compose -f docker-compose.${ENVIRONMENT}.yaml up -d
         "
 echo 'Deployment completed successfully'
