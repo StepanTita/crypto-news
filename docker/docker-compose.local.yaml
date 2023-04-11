@@ -10,7 +10,7 @@ services:
       - default
     volumes:
       - type: bind
-        source: config.docker.local.yaml
+        source: ./config.docker.local.yaml
         target: /config.yaml
     environment:
       CONFIG: /config.yaml
@@ -29,7 +29,7 @@ services:
       - default
     volumes:
       - type: bind
-        source: config.docker.local.yaml
+        source: ./config.docker.local.yaml
         target: /config.yaml
     environment:
       CONFIG: /config.yaml
@@ -48,7 +48,7 @@ services:
       - default
     volumes:
       - type: bind
-        source: config.docker.local.yaml
+        source: ./config.docker.local.yaml
         target: /config.yaml
     environment:
       CONFIG: /config.yaml
@@ -67,7 +67,7 @@ services:
       - default
     volumes:
       - type: bind
-        source: config.docker.local.yaml
+        source: ./config.docker.local.yaml
         target: /config.yaml
     ports:
       - "8080:8080"
