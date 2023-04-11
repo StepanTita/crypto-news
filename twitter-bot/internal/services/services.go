@@ -47,7 +47,7 @@ func (s service) Run(ctx context.Context) error {
 	s.log.Info("Staring twitter poster bot service...")
 	pst := poster.New(s.cfg)
 
-	err := common.RunEvery(15*time.Minute, func() error {
+	err := common.RunEvery(15*time.Second, func() error {
 		s.log.Debug("Posting news...")
 
 		n, err := pst.Post(ctx)
