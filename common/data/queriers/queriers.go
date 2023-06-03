@@ -38,7 +38,7 @@ type NewsProvider interface {
 
 	ByStatus(status ...string) NewsProvider
 
-	BySource(source string) NewsProvider
+	BySources(sources ...string) NewsProvider
 	ByIDs(ids []uuid.UUID) NewsProvider
 
 	// ByCoins TODO: maybe implement results filtering by coins later (but this might slow down,
@@ -68,6 +68,8 @@ type NewsChannelsProvider interface {
 
 	// Ordered orders by priority
 	Ordered() NewsChannelsProvider
+
+	BySources(source []string) NewsChannelsProvider
 }
 
 type PreferencesChannelCoinsProvider interface {

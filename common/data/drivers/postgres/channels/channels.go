@@ -15,8 +15,10 @@ type channels struct {
 }
 
 func New(ext sqlx.ExtContext, log *logrus.Entry) queriers.ChannelsProvider {
+	var entity model.Channel
+	channelColumns := model.PrependTableName(entity.TableName(), model.Columns(entity, false))
 	return &channels{
 		Inserter: postgres.NewInserter[model.Channel](ext, log),
-		Selector: postgres.NewSelector[model.Channel](ext, log),
+		Selector: postgres.NewSelector[model.Channel](ext, log, channelColumns),
 	}
 }

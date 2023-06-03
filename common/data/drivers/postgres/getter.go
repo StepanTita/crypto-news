@@ -28,10 +28,10 @@ type getter[T model.Model] struct {
 	expr sq.Sqlizer
 }
 
-func NewGetter[T model.Model](ext sqlx.ExtContext, log *logrus.Entry) Getter[T] {
+func NewGetter[T model.Model](ext sqlx.ExtContext, log *logrus.Entry, columns []string) Getter[T] {
 	return &getter[T]{
 		log:      log.WithField("service", "[getter]"),
-		selector: NewSelector[T](ext, log).Limit(1),
+		selector: NewSelector[T](ext, log, columns).Limit(1),
 	}
 }
 

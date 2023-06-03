@@ -19,6 +19,8 @@ type Poster interface {
 }
 
 type poster struct {
+	cfg config.Config
+
 	log *logrus.Entry
 
 	dataProvider store.DataProvider
@@ -28,6 +30,8 @@ type poster struct {
 
 func New(cfg config.Config) Poster {
 	return &poster{
+		cfg: cfg,
+
 		log: cfg.Logging().WithField("service", "[TWITTER-POSTER]"),
 
 		dataProvider: store.New(cfg),
@@ -37,7 +41,7 @@ func New(cfg config.Config) Poster {
 }
 
 func (p poster) Post(ctx context.Context) (int, error) {
-	news, err := p.dataProvider.NewsProvider().ByStatus(model.StatusPending, model.StatusFailed).Select(ctx)
+	news, err := p.dataProvider.NewsProvider().ByStatus(model.StatusPending, model.StatusFailed).BySources(p.cfg.Sources()...).Select(ctx)
 	if err != nil {
 		return 0, errors.Wrap(err, "failed to select news by status")
 	}
