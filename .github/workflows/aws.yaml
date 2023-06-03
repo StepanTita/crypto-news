@@ -3,7 +3,9 @@ name: Deploy to Amazon EC2
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+      - dev
 
 env:
   IMAGE_REPO: stepancons
@@ -29,11 +31,13 @@ jobs:
 
       - name: Test
         run: go test -v  $(go list -f '{{.Dir}}/...' -m | xargs)
-  push:
+
+  push-dev:
     needs: test
-    name: Push to DockerHub
+    name: Push dev to DockerHub
     runs-on: ubuntu-latest
     environment: dev
+    if: github.event.ref == 'refs/heads/dev' || github.event.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout
@@ -43,23 +47,67 @@ jobs:
         id: build-image
         env:
           IMAGE_REPO: ${{ env.IMAGE_REPO }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: dev
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           chmod +x ./scripts/push-to-dockerhub.sh && ./scripts/push-to-dockerhub.sh
-  deploy:
-    needs: push
-    name: Deploy to EC2
+
+  push-prod:
+    needs: push-dev
+    name: Push to DockerHub
     runs-on: ubuntu-latest
     environment: dev
+    if: github.event.ref == 'refs/heads/main'
 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build, tag, and push image to Docker Hub
+        id: build-image
+        env:
+          IMAGE_REPO: ${{ env.IMAGE_REPO }}
+          IMAGE_TAG: prod
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          chmod +x ./scripts/push-to-dockerhub.sh && ./scripts/push-to-dockerhub.sh
+
+  deploy-dev:
+    needs: push-dev
+    name: Deploy Dev to EC2
+    runs-on: ubuntu-latest
+    environment: dev
+    if: github.event.ref == 'refs/heads/dev' || github.event.ref == 'refs/heads/main'
     steps:
       - name: Checkout the files
         uses: actions/checkout@v3
 
-      - name: Copy code to server
+      - name: Copy code to server and run dev
         env:
+          BRANCH: ${{ github.ref_name }}
           ENVIRONMENT: dev
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          TARGET: ${{ secrets.TARGET }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > private_key && chmod 600 private_key
+          chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh
+
+  deploy-prod:
+    needs: deploy-dev
+    name: Deploy Prod to EC2
+    runs-on: ubuntu-latest
+    environment: dev
+    if: github.event.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout the files
+        uses: actions/checkout@v3
+
+      - name: Copy code to server and run prod
+        env:
+          BRANCH: ${{ github.ref_name }}
+          ENVIRONMENT: prod
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
