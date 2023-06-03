@@ -40,6 +40,8 @@ func NewUpdater[U, T model.Model](ext sqlx.ExtContext, log *logrus.Entry) Update
 }
 
 func (u updater[U, T]) Update(ctx context.Context, entity U) ([]T, error) {
+	u.log.Debug(sq.DebugSqlizer(u.sql.Where(u.expr)))
+
 	sql, args, err := u.sql.SetMap(model.ToMap(entity)).Where(u.expr).Suffix("RETURNING *").ToSql()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build sql update query")
@@ -63,7 +65,7 @@ func (u updater[U, T]) Update(ctx context.Context, entity U) ([]T, error) {
 	return updatedEntities, nil
 }
 
-func (s updater[U, T]) WithExpr(expr sq.Sqlizer) Updater[U, T] {
-	s.expr = expr
-	return s
+func (u updater[U, T]) WithExpr(expr sq.Sqlizer) Updater[U, T] {
+	u.expr = expr
+	return u
 }

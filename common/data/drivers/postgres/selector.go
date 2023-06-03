@@ -49,6 +49,8 @@ func NewSelector[T model.Model](ext sqlx.ExtContext, log *logrus.Entry, columns 
 func (s selector[T]) Select(ctx context.Context) ([]T, error) {
 	var entity T
 
+	s.log.Debug(sq.DebugSqlizer(s.sql.Where(s.expr)))
+
 	sql, args, err := s.sql.Where(s.expr).ToSql()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build sql insert query")

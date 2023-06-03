@@ -72,6 +72,8 @@ func (i inserter[T]) InsertBatch(ctx context.Context, entities []T) error {
 	columns, namedBindings := model.NamedBinding(entities[0])
 	sql := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s) RETURNING *`, tableName, strings.Join(columns, ","), strings.Join(namedBindings, ","))
 
+	i.log.Debug(sql)
+
 	rows, err := sqlx.NamedQueryContext(ctx, i.ext, i.ext.Rebind(sql), entities)
 	if err != nil {
 		return errors.Wrapf(err, "failed to insert entity into table: %s", tableName)

@@ -44,6 +44,8 @@ func NewRemover[T model.Model](ext sqlx.ExtContext, log *logrus.Entry) Remover[T
 }
 
 func (r remover[T]) Remove(ctx context.Context, entity T) error {
+	r.log.Debug(sq.DebugSqlizer(r.sql.Where(r.expr)))
+
 	sql, args, err := r.sql.Where(r.expr).ToSql()
 	if err != nil {
 		return errors.Wrap(err, "failed to build sql remove query")

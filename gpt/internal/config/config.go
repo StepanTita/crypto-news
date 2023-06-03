@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"time"
 
 	gptconfig "github.com/StepanTita/go-EdgeGPT/config"
 	"github.com/pkg/errors"
@@ -12,11 +13,13 @@ import (
 
 type Config interface {
 	commoncfg.Config
+	Generator
 	GPTConfig() gptconfig.Config
 }
 
 type config struct {
 	commoncfg.Config
+	Generator
 	gptCfg gptconfig.Config
 }
 
@@ -29,7 +32,10 @@ type yamlConfig struct {
 	Database  commoncfg.YamlDatabaseConfig `yaml:"database"`
 	KVStore   commoncfg.YamlKVStoreConfig  `yaml:"kv_store"`
 	Runtime   commoncfg.YamlRuntimeConfig  `yaml:"runtime"`
-	GPTConfig gptconfig.YamlGPTConfig      `yaml:"gpt"`
+	GPTConfig struct {
+		gptconfig.YamlGPTConfig `yaml:",inline"`
+		GenerateEvery           time.Duration `yaml:"generate_every"`
+	} `yaml:"gpt"`
 }
 
 func NewFromFile(path string) Config {
@@ -46,7 +52,8 @@ func NewFromFile(path string) Config {
 	}
 
 	return &config{
-		Config: commoncfg.New(cfg.LogLevel, cfg.Runtime, cfg.Database, cfg.KVStore),
-		gptCfg: gptconfig.NewFromGPTConfig(cfg.GPTConfig),
+		Config:    commoncfg.New(cfg.LogLevel, cfg.Runtime, cfg.Database, cfg.KVStore),
+		gptCfg:    gptconfig.NewFromGPTConfig(cfg.GPTConfig.YamlGPTConfig),
+		Generator: NewGenerator(cfg.GPTConfig.GenerateEvery),
 	}
 }

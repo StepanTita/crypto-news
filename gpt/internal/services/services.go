@@ -44,7 +44,7 @@ func (s service) Run(ctx context.Context) error {
 	s.log.Info("Staring gpt generator bot service...")
 	bot := chat_bot.New(s.cfg.GPTConfig())
 
-	common.RunEveryWithBackoff(1*time.Hour, 15*time.Second, 15*time.Minute, func() error {
+	common.RunEveryWithBackoff(s.cfg.GenerateEvery(), 15*time.Second, 15*time.Minute, func() error {
 		s.log.Debug("Generating digest...")
 
 		err := bot.Init(ctx)

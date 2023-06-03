@@ -52,7 +52,7 @@ func RunEveryWithBackoff(d time.Duration, minBackoff, maxBackoff time.Duration, 
 				// will be just empty struct if nil
 				oldBackoff := convert.FromPtr(backOffs[i])
 				// min(oldBackoff * 2^(i) + minBackoff * rand.Float[0.5, 1], maxBackoff)
-				newBackoffDuration := MinDuration(oldBackoff.backOff*time.Duration(math.Pow(2, float64(oldBackoff.trial)))+minBackoff*time.Duration(rand.Float64()*0.5+0.5), maxBackoff)
+				newBackoffDuration := MinDuration(oldBackoff.backOff*time.Duration(math.Pow(2, float64(oldBackoff.trial)))+time.Duration(float64(minBackoff)*rand.Float64()*0.5+0.5), maxBackoff)
 				backOffs[i] = &funcBackoff{
 					lastRun: MaxTime(oldBackoff.lastRun, convert.ToPtr(x.Add(minBackoff))),
 					backOff: newBackoffDuration,
