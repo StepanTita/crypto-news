@@ -4,7 +4,8 @@
 
 docker login -u "$IMAGE_REPO" -p "$DOCKERHUB_TOKEN"
 
-services=("migrator" "parser" "telegram-bot" "twitter-bot")
+# TODO: make this list autopopulate based on the presence of the .Dockerfile in dir
+services=("migrator" "parser" "telegram-bot" "twitter-bot" "gpt")
 for IMAGE_NAME in "${services[@]}"; do
   echo "Processing $IMAGE_NAME..."
 
