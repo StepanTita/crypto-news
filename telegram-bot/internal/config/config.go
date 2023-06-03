@@ -22,7 +22,8 @@ type config struct {
 type yamlConfig struct {
 	LogLevel string `yaml:"log_level"`
 	Telegram struct {
-		ApiToken string `yaml:"api_token"`
+		ApiToken string   `yaml:"api_token"`
+		Sources  []string `yaml:"sources"`
 	} `yaml:"telegram"`
 	Database commoncfg.YamlDatabaseConfig `yaml:"database"`
 	KVStore  commoncfg.YamlKVStoreConfig  `yaml:"kv_store"`
@@ -44,6 +45,6 @@ func New(path string) Config {
 
 	return &config{
 		Config:   commoncfg.New(cfg.LogLevel, cfg.Runtime, cfg.Database, cfg.KVStore),
-		Listener: NewListener(cfg.Telegram.ApiToken),
+		Listener: NewListener(cfg.Telegram.ApiToken, cfg.Telegram.Sources),
 	}
 }

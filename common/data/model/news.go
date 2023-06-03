@@ -15,6 +15,10 @@ const (
 	StatusFailed    = "failed"
 )
 
+const (
+	ResourceTypeSource = "source"
+)
+
 type News struct {
 	ID          uuid.UUID  `db:"id,omitempty"`
 	CreatedAt   time.Time  `db:"created_at,omitempty"`

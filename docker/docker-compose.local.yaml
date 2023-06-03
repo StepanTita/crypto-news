@@ -38,6 +38,25 @@ services:
     restart: always
     entrypoint: /bin/sh
     command: -c "parser run"
+  gpt:
+    build:
+      context: ..
+      dockerfile: gpt/Dockerfile
+    image: stepancons/go-edge-gpt:latest
+    container_name: go-edge-gpt
+    networks:
+      - default
+    volumes:
+      - type: bind
+        source: ./config.docker.local.yaml
+        target: /config.yaml
+    environment:
+      CONFIG: /config.yaml
+    depends_on:
+      - migrator
+    restart: always
+    entrypoint: /bin/sh
+    command: -c "gpt run"
   telegram-bot:
     build:
       context: ..

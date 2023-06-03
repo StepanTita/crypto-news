@@ -30,6 +30,22 @@ services:
     restart: always
     entrypoint: /bin/sh
     command: -c "parser run"
+  gpt:
+    image: stepancons/go-edge-gpt:latest
+    container_name: go-edge-gpt
+    networks:
+      - default
+    volumes:
+      - type: bind
+        source: ./config.docker.dev.yaml
+        target: /config.yaml
+    environment:
+      CONFIG: /config.yaml
+    depends_on:
+      - migrator
+    restart: always
+    entrypoint: /bin/sh
+    command: -c "gpt run"
   telegram-bot:
     image: stepancons/crypto-news-telegram-bot:latest
     container_name: telegram-bot
@@ -46,24 +62,24 @@ services:
     restart: always
     entrypoint: /bin/sh
     command: -c "telegram-bot run"
-  twitter-bot:
-    image: stepancons/crypto-news-twitter-bot:latest
-    container_name: twitter-bot
-    networks:
-      - default
-    volumes:
-      - type: bind
-        source: ./config.docker.dev.yaml
-        target: /config.yaml
-    ports:
-      - "8080:8080"
-    environment:
-      CONFIG: /config.yaml
-    depends_on:
-      - migrator
-    restart: always
-    entrypoint: /bin/sh
-    command: -c "twitter-bot run"
+#  twitter-bot:
+#    image: stepancons/crypto-news-twitter-bot:latest
+#    container_name: twitter-bot
+#    networks:
+#      - default
+#    volumes:
+#      - type: bind
+#        source: ./config.docker.dev.yaml
+#        target: /config.yaml
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      CONFIG: /config.yaml
+#    depends_on:
+#      - migrator
+#    restart: always
+#    entrypoint: /bin/sh
+#    command: -c "twitter-bot run"
   redis_db:
     image: redis:7-alpine
     hostname: redis_db

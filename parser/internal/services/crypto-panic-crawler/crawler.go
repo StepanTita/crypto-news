@@ -46,7 +46,7 @@ func NewCrawler(cfg config.Config) crawler.Crawler {
 }
 
 func (c CryptoPanicCrawler) Crawl(ctx context.Context) ([]crawler.ParsedBody, int, error) {
-	latestNews, err := c.dataProvider.NewsProvider().BySource(utils.CryptoPanic).GetLatest(ctx)
+	latestNews, err := c.dataProvider.NewsProvider().BySources(utils.CryptoPanic).GetLatest(ctx)
 	if err != nil {
 		if !errors.Is(err, data.ErrNotFound) {
 			return nil, 0, errors.Wrap(err, "failed to query news provider by source")

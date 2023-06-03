@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -17,6 +19,8 @@ type Remover[T model.Model] interface {
 	queriers.Remover[T]
 
 	WithExpr(expr sq.Sqlizer) Remover[T]
+
+	Join(to []string, on string, args ...interface{}) Remover[T]
 }
 
 type remover[T model.Model] struct {
@@ -60,5 +64,11 @@ func (r remover[T]) Remove(ctx context.Context, entity T) error {
 
 func (r remover[T]) WithExpr(expr sq.Sqlizer) Remover[T] {
 	r.expr = expr
+	return r
+}
+
+func (r remover[T]) Join(to []string, on string, args ...interface{}) Remover[T] {
+	var entity T
+	r.sql = r.sql.From(fmt.Sprintf("%s USING %s", entity.TableName(), strings.Join(to, ","))).Where(on, args...)
 	return r
 }

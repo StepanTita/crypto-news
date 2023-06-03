@@ -10,15 +10,17 @@ import (
 type Twitter interface {
 	OAuthConfig() *oauth2.Config
 
+	Sources() []string
 	AuthAddress() string
 	Port() string
 	Address() string
 }
 
 type YamlTwitterConfig struct {
-	ApiKey        string `yaml:"api_key"`
-	ApiSecret     string `yaml:"api_secret"`
-	BearerToken   string `yaml:"bearer_token"`
+	Sources       []string `yaml:"sources"`
+	ApiKey        string   `yaml:"api_key"`
+	ApiSecret     string   `yaml:"api_secret"`
+	BearerToken   string   `yaml:"bearer_token"`
 	Authenticator struct {
 		Address  string `yaml:"address"`
 		TokenURL string `yaml:"token_url"`
@@ -27,6 +29,7 @@ type YamlTwitterConfig struct {
 }
 
 type twitter struct {
+	sources     []string
 	apiKey      string
 	apiSecret   string
 	bearerToken string
@@ -37,6 +40,7 @@ type twitter struct {
 
 func NewTwitter(posterConfig YamlTwitterConfig) Twitter {
 	return &twitter{
+		sources:     posterConfig.Sources,
 		apiKey:      posterConfig.ApiKey,
 		apiSecret:   posterConfig.ApiSecret,
 		bearerToken: posterConfig.BearerToken,
@@ -58,6 +62,10 @@ func (t twitter) OAuthConfig() *oauth2.Config {
 			AuthStyle: 0,
 		},
 	}
+}
+
+func (t twitter) Sources() []string {
+	return t.sources
 }
 
 func (t twitter) AuthAddress() string {

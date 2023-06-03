@@ -20,7 +20,7 @@ type Selector[T model.Model] interface {
 
 	WithExpr(expr sq.Sqlizer) Selector[T]
 
-	Join(to string, on sq.Sqlizer) Selector[T]
+	Join(to string, on string, args ...interface{}) Selector[T]
 
 	Limit(l uint64) Selector[T]
 	Order(by, order string) Selector[T]
@@ -34,7 +34,7 @@ type selector[T model.Model] struct {
 	sql  sq.SelectBuilder
 }
 
-func NewSelector[T model.Model](ext sqlx.ExtContext, log *logrus.Entry) Selector[T] {
+func NewSelector[T model.Model](ext sqlx.ExtContext, log *logrus.Entry, columns []string) Selector[T] {
 	var entity T
 
 	return &selector[T]{
@@ -42,7 +42,7 @@ func NewSelector[T model.Model](ext sqlx.ExtContext, log *logrus.Entry) Selector
 		ext: ext,
 
 		expr: common.BasicSqlizer,
-		sql:  sq.Select(model.Columns(entity, false)...).From(entity.TableName()),
+		sql:  sq.Select(columns...).From(entity.TableName()),
 	}
 }
 
@@ -81,8 +81,8 @@ func (s selector[T]) WithExpr(expr sq.Sqlizer) Selector[T] {
 	return s
 }
 
-func (s selector[T]) Join(to string, on sq.Sqlizer) Selector[T] {
-	s.sql = s.sql.LeftJoin(to, on)
+func (s selector[T]) Join(to string, on string, args ...interface{}) Selector[T] {
+	s.sql = s.sql.Join(fmt.Sprintf("%s ON %s", to, on), args...)
 	return s
 }
 
