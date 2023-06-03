@@ -2,7 +2,7 @@ version: "3.9"
 services:
   migrator:
     image: stepancons/crypto-news-migrator:dev
-    container_name: migrator
+    container_name: migrator-dev
     networks:
       - dev
     volumes:
@@ -16,7 +16,7 @@ services:
     command: -c "migrator migrate up"
   parser:
     image: stepancons/crypto-news-parser:dev
-    container_name: parser
+    container_name: parser-dev
     networks:
       - dev
     volumes:
@@ -32,7 +32,7 @@ services:
     command: -c "parser run"
   gpt:
     image: stepancons/crypto-news-gpt:dev
-    container_name: go-edge-gpt
+    container_name: gpt-dev
     networks:
       - dev
     volumes:
@@ -48,7 +48,7 @@ services:
     command: -c "gpt run"
   telegram-bot:
     image: stepancons/crypto-news-telegram-bot:dev
-    container_name: telegram-bot
+    container_name: telegram-bot-dev
     networks:
       - dev
     volumes:
@@ -64,7 +64,7 @@ services:
     command: -c "telegram-bot run"
   #  twitter-bot:
   #    image: stepancons/crypto-news-twitter-bot:latest
-  #    container_name: twitter-bot
+  #    container_name: twitter-bot-dev
   #    networks:
   #      - dev
   #    volumes:
@@ -82,6 +82,7 @@ services:
   #    command: -c "twitter-bot run"
   redis_db:
     image: redis:7-alpine
+    container_name: redis_db-dev
     networks:
       - dev
     hostname: redis_db

@@ -8,7 +8,7 @@ ssh -o StrictHostKeyChecking=no "${REMOTE_USER}"@"${REMOTE_HOST}" -i private_key
         git reset --hard origin/${BRANCH}
         git pull origin ${BRANCH} &&
         cd ./docker &&
-        docker-compose -f docker-compose.${ENVIRONMENT}.yaml down -v
+        docker-compose -f docker-compose.${ENVIRONMENT}.yaml down -v --rmi all --volumes
         docker-compose -f docker-compose.${ENVIRONMENT}.yaml pull
         docker-compose -f docker-compose.${ENVIRONMENT}.yaml up -d
         "
