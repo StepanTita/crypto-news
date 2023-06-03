@@ -84,6 +84,7 @@ jobs:
 
       - name: Copy code to server and run dev
         env:
+          BRANCH: ${{ github.ref_name }}
           ENVIRONMENT: dev
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
@@ -105,6 +106,7 @@ jobs:
 
       - name: Copy code to server and run prod
         env:
+          BRANCH: ${{ github.ref_name }}
           ENVIRONMENT: prod
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
