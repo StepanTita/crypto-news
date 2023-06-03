@@ -37,7 +37,7 @@ services:
       - default
     volumes:
       - type: bind
-        source: ./config.docker.local.yaml
+        source: ./config.docker.dev.yaml
         target: /config.yaml
     environment:
       CONFIG: /config.yaml
