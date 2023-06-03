@@ -1,43 +1,43 @@
 version: "3.9"
 services:
   migrator:
-    image: stepancons/crypto-news-migrator:dev
+    image: stepancons/crypto-news-migrator:prod
     container_name: migrator
     networks:
-      - dev
+      - prod
     volumes:
       - type: bind
-        source: ./config.docker.dev.yaml
+        source: ./config.docker.prod.yaml
         target: /config.yaml
     environment:
       CONFIG: /config.yaml
     restart: on-failure
     entrypoint: /bin/sh
     command: -c "migrator migrate up"
-  parser:
-    image: stepancons/crypto-news-parser:dev
-    container_name: parser
-    networks:
-      - dev
-    volumes:
-      - type: bind
-        source: ./config.docker.dev.yaml
-        target: /config.yaml
-    environment:
-      CONFIG: /config.yaml
-    depends_on:
-      - migrator
-    restart: always
-    entrypoint: /bin/sh
-    command: -c "parser run"
+  #  parser:
+  #    image: stepancons/crypto-news-parser:prod
+  #    container_name: parser
+  #    networks:
+  #      - prod
+  #    volumes:
+  #      - type: bind
+  #        source: ./config.docker.prod.yaml
+  #        target: /config.yaml
+  #    environment:
+  #      CONFIG: /config.yaml
+  #    depends_on:
+  #      - migrator
+  #    restart: always
+  #    entrypoint: /bin/sh
+  #    command: -c "parser run"
   gpt:
-    image: stepancons/crypto-news-gpt:dev
+    image: stepancons/crypto-news-gpt:prod
     container_name: go-edge-gpt
     networks:
-      - dev
+      - prod
     volumes:
       - type: bind
-        source: ./config.docker.dev.yaml
+        source: ./config.docker.prod.yaml
         target: /config.yaml
     environment:
       CONFIG: /config.yaml
@@ -47,13 +47,13 @@ services:
     entrypoint: /bin/sh
     command: -c "gpt run"
   telegram-bot:
-    image: stepancons/crypto-news-telegram-bot:dev
+    image: stepancons/crypto-news-telegram-bot:prod
     container_name: telegram-bot
     networks:
-      - dev
+      - prod
     volumes:
       - type: bind
-        source: ./config.docker.dev.yaml
+        source: ./config.docker.prod.yaml
         target: /config.yaml
     environment:
       CONFIG: /config.yaml
@@ -66,10 +66,10 @@ services:
   #    image: stepancons/crypto-news-twitter-bot:latest
   #    container_name: twitter-bot
   #    networks:
-  #      - dev
+  #      - prod
   #    volumes:
   #      - type: bind
-  #        source: ./config.docker.dev.yaml
+  #        source: ./config.docker.prod.yaml
   #        target: /config.yaml
   #    ports:
   #      - "8080:8080"
@@ -83,7 +83,7 @@ services:
   redis_db:
     image: redis:7-alpine
     networks:
-      - dev
+      - prod
     hostname: redis_db
     restart: always
     command: redis-server --save 20 1 --loglevel warning # --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
@@ -96,5 +96,5 @@ volumes:
     driver: local
 
 networks:
-  dev:
-    name: crypto_news_dev
+  prod:
+    name: crypto_news_prod

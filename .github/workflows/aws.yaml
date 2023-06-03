@@ -3,7 +3,9 @@ name: Deploy to Amazon EC2
 on:
   workflow_dispatch:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+      - dev
 
 env:
   IMAGE_REPO: stepancons
@@ -43,23 +45,47 @@ jobs:
         id: build-image
         env:
           IMAGE_REPO: ${{ env.IMAGE_REPO }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
           chmod +x ./scripts/push-to-dockerhub.sh && ./scripts/push-to-dockerhub.sh
-  deploy:
+
+  deploy-dev:
     needs: push
-    name: Deploy to EC2
+    name: Deploy Prod to EC2
     runs-on: ubuntu-latest
     environment: dev
-
+    if: github.event.ref == 'refs/heads/dev' || github.event.ref == 'refs/heads/main'
     steps:
       - name: Checkout the files
         uses: actions/checkout@v3
 
-      - name: Copy code to server
+      - name: Copy code to server and run dev
         env:
           ENVIRONMENT: dev
+          IMAGE_TAG: dev
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          TARGET: ${{ secrets.TARGET }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > private_key && chmod 600 private_key
+          chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh
+
+  deploy-prod:
+    needs: deploy-dev
+    name: Deploy Prod to EC2
+    runs-on: ubuntu-latest
+    environment: dev
+    if: github.event.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout the files
+        uses: actions/checkout@v3
+
+      - name: Copy code to server and run prod
+        env:
+          ENVIRONMENT: prod
+          IMAGE_TAG: prod
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
