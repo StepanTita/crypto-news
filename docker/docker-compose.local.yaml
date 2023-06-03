@@ -42,7 +42,7 @@ services:
     build:
       context: ..
       dockerfile: gpt/Dockerfile
-    image: stepancons/go-edge-gpt:latest
+    image: stepancons/crypto-news-gpt:latest
     container_name: go-edge-gpt
     networks:
       - default
