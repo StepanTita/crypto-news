@@ -73,7 +73,7 @@ jobs:
           chmod +x ./scripts/push-to-dockerhub.sh && ./scripts/push-to-dockerhub.sh
 
   deploy-dev:
-    needs: push
+    needs: push-dev
     name: Deploy Dev to EC2
     runs-on: ubuntu-latest
     environment: dev
