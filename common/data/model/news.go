@@ -76,3 +76,9 @@ type UpdateNewsParams struct {
 func (n UpdateNewsParams) TableName() string {
 	return NEWS
 }
+
+type MetaLinksData struct {
+	ID    string `json:"id"`
+	URL   string `json:"url"`
+	Title string `json:"title"`
+}

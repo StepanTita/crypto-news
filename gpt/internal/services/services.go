@@ -2,13 +2,12 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"regexp"
 	"strings"
 	"time"
 
 	chat_bot "github.com/StepanTita/go-EdgeGPT/chat-bot"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -52,22 +51,36 @@ func (s service) Run(ctx context.Context) error {
 			return errors.Wrap(err, "failed to initialize bot")
 		}
 
-		parsedResponsesChan, err := bot.Ask(ctx, s.cfg.GPTConfig().InitialPrompt(), s.cfg.GPTConfig().Style(), true)
+		// we shouldn't create single post longer than 10 minutes, if that happens - probably something went wrong
+		deadlineCtx, cancel := context.WithDeadline(ctx, time.Now().Add(10*time.Minute))
+		defer cancel()
+
+		parsedResponsesChan, err := bot.Ask(deadlineCtx, s.cfg.GPTConfig().InitialPrompt(), s.cfg.GPTConfig().Style(), true)
 		if err != nil {
 			return errors.Wrap(err, "failed to ask bot")
 		}
 
-		digestResponse := s.readResponses(parsedResponsesChan)
+		digestResponse, err := s.readResponses(deadlineCtx, parsedResponsesChan)
 		if err != nil {
 			return errors.Wrap(err, "failed to generate digest")
 		}
 
-		resourcesList := make([]model.NewsMediaResource, 0, len(digestResponse.linksSet))
-		for link := range digestResponse.linksSet {
+		resourcesList := make([]model.NewsMediaResource, 0, len(digestResponse.links))
+		for _, link := range digestResponse.links {
+			metaLinks := model.MetaLinksData{
+				ID:    link.ID,
+				URL:   link.URL,
+				Title: link.Title,
+			}
+
+			metaLinksBody, err := json.Marshal(metaLinks)
+			if err != nil {
+				return errors.Wrap(err, "failed to marshal meta links body")
+			}
 			resourcesList = append(resourcesList, model.NewsMediaResource{
 				Type: convert.ToPtr(model.ResourceTypeSource),
-				URL:  convert.ToPtr(link),
-				Meta: nil,
+				URL:  convert.ToPtr(link.URL),
+				Meta: metaLinksBody,
 			})
 		}
 
@@ -117,51 +130,32 @@ func (s service) Run(ctx context.Context) error {
 	return nil
 }
 
-func (s service) readResponses(responsesChan <-chan chat_bot.ParsedFrame) generationsResponse {
-	response := generationsResponse{
-		linksSet: make(map[string]bool),
-	}
+func (s service) readResponses(ctx context.Context, responsesChan <-chan chat_bot.ParsedFrame) (*generationsResponse, error) {
+	response := &generationsResponse{}
 	for msg := range responsesChan {
 		if msg.Skip {
 			continue
 		}
 
 		response.content = fmt.Sprintf("%s\n\n%s", msg.Text, strings.TrimPrefix(msg.AdaptiveCards, "\n"))
-		for _, link := range msg.Links {
-			response.linksSet[link] = true
-		}
+		response.links = msg.Links
 	}
-	re := regexp.MustCompile(`\<coins\>\[([A-Z\,]+)\]\<\/coins\>`)
-	if match := re.FindStringSubmatch(response.content); len(match) > 0 {
-		response.coins = strings.Split(match[1], ",")
-	}
-	return response
-}
 
-func toNewsChannelsBatch(news *model.News, channels []model.Channel) []model.NewsChannel {
-	newsChannels := make([]model.NewsChannel, len(channels))
-	for i, c := range channels {
-		newsChannels[i] = model.NewsChannel{
-			ChannelID: c.ChannelID,
-			NewsID:    news.ID,
+	if ctx.Err() != nil {
+		return nil, errors.New("failed to ask bot due to cancelled context")
+	}
+
+	coinsSet := make(map[string]bool)
+	for _, match := range coinsRegex.FindAllStringSubmatch(response.content, -1) {
+		for _, coin := range strings.Split(match[1], ",") {
+			coinsSet[strings.TrimSpace(coin)] = true
 		}
 	}
-	return newsChannels
-}
 
-func createCoinsNewsCoinsBatch(newsID uuid.UUID, codes []string) ([]model.Coin, []model.NewsCoin) {
-	coins := make([]model.Coin, len(codes))
-	newsCoins := make([]model.NewsCoin, len(codes))
-	for i, code := range codes {
-		newsCoins[i] = model.NewsCoin{
-			Code:   code,
-			NewsID: newsID,
-		}
-
-		coins[i] = model.Coin{
-			Code: code,
-			Slug: code,
-		}
+	for k := range coinsSet {
+		response.coins = append(response.coins, k)
 	}
-	return coins, newsCoins
+
+	response.content = coinsRegex.ReplaceAllString(response.content, "")
+	return response, nil
 }
