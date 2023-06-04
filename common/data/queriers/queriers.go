@@ -49,6 +49,10 @@ type NewsProvider interface {
 }
 
 type CoinsProvider interface {
+	Selector[model.Coin]
+
+	ByNewsID(id uuid.UUID) CoinsProvider
+
 	UpsertCoinsBatch(ctx context.Context, coins []model.Coin) error
 }
 
