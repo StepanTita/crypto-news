@@ -8,4 +8,5 @@ use (
 	telegram-bot
 	twitter-bot
 	templates
+	localization
 )

@@ -8,6 +8,10 @@ import (
 	"common/data/model"
 )
 
+const keyPrevDigest = "news/prev-digest"
+
+const maxInputChars = 4000
+
 var coinsRegex = regexp.MustCompile(`\<coins\>\[([A-Z\,\s]+)\]\<\/coins\>`)
 
 func toNewsChannelsBatch(news *model.News, channels []model.Channel) []model.NewsChannel {

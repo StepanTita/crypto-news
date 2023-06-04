@@ -3,7 +3,7 @@ module gpt
 go 1.20
 
 require (
-	github.com/StepanTita/go-EdgeGPT v0.0.1-beta2
+	github.com/StepanTita/go-EdgeGPT v0.0.0-00010101000000-000000000000
 	github.com/google/uuid v1.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.2
@@ -19,4 +19,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/text v0.3.8 // indirect
 )
+
+replace github.com/StepanTita/go-EdgeGPT => ../../../github.com/StepanTita/go-EdgeGPT

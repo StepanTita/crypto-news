@@ -13,6 +13,7 @@ type Config interface {
 	KVStorer
 	Runtime
 	Templator
+	Localizer
 }
 
 type config struct {
@@ -21,6 +22,7 @@ type config struct {
 	KVStorer
 	Runtime
 	Templator
+	Localizer
 }
 
 type yamlConfig struct {
@@ -52,9 +54,10 @@ func NewFromFile(path string) Config {
 func New(logLevel string, runtime YamlRuntimeConfig, database YamlDatabaseConfig, kvStore YamlKVStoreConfig) Config {
 	return &config{
 		Logger:    NewLogger(logLevel),
-		Runtime:   NewRuntime(runtime.Environment, runtime.Version),
+		Runtime:   NewRuntime(runtime.Environment, runtime.Version, runtime.Locales),
 		Databaser: NewDatabaser(database),
 		KVStorer:  NewKVStorer(kvStore),
 		Templator: NewTemplator(),
+		Localizer: NewLocalizer(),
 	}
 }
