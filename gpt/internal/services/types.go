@@ -1,7 +1,9 @@
 package services
 
+import chat_bot "github.com/StepanTita/go-EdgeGPT/chat-bot"
+
 type generationsResponse struct {
-	content  string
-	linksSet map[string]bool
-	coins    []string
+	content string
+	links   []chat_bot.ResponseLink
+	coins   []string
 }

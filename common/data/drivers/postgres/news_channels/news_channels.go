@@ -4,6 +4,7 @@ import (
 	"context"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 
@@ -46,6 +47,11 @@ func (n newsChannels) Ordered() queriers.NewsChannelsProvider {
 
 func (n newsChannels) BySources(source []string) queriers.NewsChannelsProvider {
 	n.expr = sq.And{n.expr, sq.Eq{"news.source": source}}
+	return n
+}
+
+func (n newsChannels) ByIDs(ids []uuid.UUID) queriers.NewsChannelsProvider {
+	n.expr = sq.And{n.expr, sq.Eq{"news_channels.id": ids}}
 	return n
 }
 

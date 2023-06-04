@@ -70,6 +70,7 @@ type NewsChannelsProvider interface {
 	Ordered() NewsChannelsProvider
 
 	BySources(source []string) NewsChannelsProvider
+	ByIDs(ids []uuid.UUID) NewsChannelsProvider
 }
 
 type PreferencesChannelCoinsProvider interface {
