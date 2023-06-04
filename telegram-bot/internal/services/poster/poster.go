@@ -80,8 +80,16 @@ func (p poster) Post(ctx context.Context) (int, error) {
 	count := 0
 	successfulIDs := make([]uuid.UUID, 0, 10)
 	for _, n := range news {
+		// TODO: refactor to get batch instead of querying db in loop
+		coins, err := p.dataProvider.CoinsProvider().ByNewsID(n.ID).Select(ctx)
+		if err != nil {
+			if !errors.Is(err, data.ErrNotFound) {
+				p.log.WithError(err).Error("failed to get coins")
+			}
+		}
+
 		for _, newsChannel := range newsChannelsMapping[n.ID] {
-			msg, err := p.buildMessage(newsChannel.ChannelID, n)
+			msg, err := p.buildMessage(newsChannel.ChannelID, n, coins)
 			if err != nil {
 				p.log.WithError(err).Error("failed to build message")
 				continue
@@ -112,7 +120,7 @@ func (p poster) Post(ctx context.Context) (int, error) {
 	return count, nil
 }
 
-func (p poster) buildMessage(channelID int64, news model.News) (*tgbotapi.MessageConfig, error) {
+func (p poster) buildMessage(channelID int64, news model.News, coins []model.Coin) (*tgbotapi.MessageConfig, error) {
 	msg := tgbotapi.NewMessage(channelID, "")
 	msg.ParseMode = tgbotapi.ModeHTML
 
@@ -129,10 +137,16 @@ func (p poster) buildMessage(channelID int64, news model.News) (*tgbotapi.Messag
 		references.WriteString(fmt.Sprintf("%s <a href=\"%s\">%s</a>.\n", metaLinks.ID, metaLinks.URL, metaLinks.Title))
 	}
 
+	coinsHashTags := strings.Builder{}
+	for _, coin := range coins {
+		coinsHashTags.WriteString(fmt.Sprintf("#%s ", coin.Code))
+	}
+
 	msg.Text = fmt.Sprintf(p.cfg.Template(commonutils.NewsPost),
 		escapeKeepingHTML(convert.FromPtr(news.Media.Title)),
 		escapeKeepingHTML(convert.FromPtr(news.Media.Text)),
 		escapeKeepingHTML(references.String()),
+		escapeKeepingHTML(coinsHashTags.String()),
 		escapeKeepingHTML(convert.FromPtr(news.Source)),
 	)
 
