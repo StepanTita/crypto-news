@@ -26,6 +26,10 @@ type config struct {
 }
 
 type yamlConfig struct {
+	Environment string   `yaml:"environment"`
+	Version     string   `yaml:"version"`
+	Locales     []string `yaml:"locales"`
+
 	LogLevel string             `yaml:"log_level"`
 	Database YamlDatabaseConfig `yaml:"database"`
 	KVStore  YamlKVStoreConfig  `yaml:"kv_store"`
@@ -48,6 +52,7 @@ func NewFromFile(path string) Config {
 		Logger:    NewLogger(cfg.LogLevel),
 		Databaser: NewDatabaser(cfg.Database),
 		KVStorer:  NewKVStorer(cfg.KVStore),
+		Runtime:   NewRuntime(cfg.Environment, cfg.Version, cfg.Locales),
 	}
 }
 
