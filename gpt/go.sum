@@ -1,3 +1,5 @@
+github.com/StepanTita/go-EdgeGPT v0.0.1-beta3.0.20230608015511-530b9f22282f h1:88oVy6L/53meBH543rMtmgT6B/4AJeLdmQo2KXh9iIo=
+github.com/StepanTita/go-EdgeGPT v0.0.1-beta3.0.20230608015511-530b9f22282f/go.mod h1:oVs2fyxJ6bJEkzEYhi4C8avdT8Uk8E5EuSpAo1Od0bk=
 github.com/cpuguy83/go-md2man/v2 v2.0.2 h1:p1EgwI/C7NhT0JmVkwCD2ZBK8j4aeHQX2pMHHBfMQ6w=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

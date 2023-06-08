@@ -162,14 +162,14 @@ func (p poster) buildMessage(channelID int64, news model.News, coins []model.Coi
 
 func (p poster) sendMultiple(msg *tgbotapi.MessageConfig) error {
 	partText := ""
-	parts := strings.Split(msg.Text, "\n\n")
+	parts := strings.Split(msg.Text, "\n")
 
 	for _, part := range parts {
 		if len(partText+part) < telegramMaxMessageLen {
 			if partText == "" {
 				partText = part
 			} else {
-				partText += fmt.Sprintf("\n\n%s", part)
+				partText += fmt.Sprintf("\n%s", part)
 			}
 		} else {
 			msg.Text = partText
