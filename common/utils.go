@@ -1,6 +1,7 @@
 package common
 
 import (
+	gerrors "errors"
 	"math"
 	"math/rand"
 	"time"
@@ -24,11 +25,23 @@ func RunEvery(d time.Duration, fs ...func() error) error {
 	return nil
 }
 
+func tryRunMultiple(trials int, f func() error) error {
+	var errTrace error
+	for ; trials > 0; trials-- {
+		if err := f(); err != nil {
+			errTrace = gerrors.Join(errTrace, err)
+			continue
+		}
+		return nil
+	}
+	return errTrace
+}
+
 func RunEveryWithBackoff(d time.Duration, minBackoff, maxBackoff time.Duration, fs ...func() error) {
 
 	backOffs := make([]*funcBackoff, len(fs))
 	for i, f := range fs {
-		if err := f(); err != nil {
+		if err := tryRunMultiple(5, f); err != nil {
 			x := common.CurrentTimestamp()
 			logrus.WithError(err).Errorf("failed to run function with backoff: %v -> %v", x, i)
 			backOffs[i] = &funcBackoff{lastRun: &x, backOff: minBackoff, trial: 1}
@@ -46,7 +59,7 @@ func RunEveryWithBackoff(d time.Duration, minBackoff, maxBackoff time.Duration, 
 					continue
 				}
 			}
-			if err := f(); err != nil {
+			if err := tryRunMultiple(5, f); err != nil {
 				logrus.WithError(err).Errorf("failed to run function with backoff: %v -> %v", x, i)
 
 				// will be just empty struct if nil

@@ -29,6 +29,7 @@ type News struct {
 	// Data
 	Media *NewsMedia `db:"media"`
 
+	Locale         *string `db:"locale"`
 	Source         *string `db:"source"`
 	OriginalSource *string `db:"original_source"`
 

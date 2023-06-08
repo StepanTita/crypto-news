@@ -16,6 +16,7 @@ github.com/MichaelMure/go-term-markdown v0.1.4 h1:Ir3kBXDUtOX7dEv0EaQV8CNPpH+T7A
 github.com/MichaelMure/go-term-text v0.3.1 h1:Kw9kZanyZWiCHOYu9v/8pWEgDQ6UVN9/ix2Vd2zzWf0=
 github.com/OneOfOne/xxhash v1.2.2 h1:KMrpdQIwFcEqXDklaen+P1axHaj9BSKzvpUUfnHldSE=
 github.com/StepanTita/go-EdgeGPT v0.0.1-beta2/go.mod h1:oVs2fyxJ6bJEkzEYhi4C8avdT8Uk8E5EuSpAo1Od0bk=
+github.com/StepanTita/go-EdgeGPT v0.0.1-beta3/go.mod h1:oVs2fyxJ6bJEkzEYhi4C8avdT8Uk8E5EuSpAo1Od0bk=
 github.com/a8m/expect v1.0.0 h1:o0PXeXn7zLB77ajwOyT1s1HcPJ4hbV6jAvCWUwvFBUM=
 github.com/alecthomas/chroma v0.7.1 h1:G1i02OhUbRi2nJxcNkwJaY/J1gHXj9tt72qN6ZouLFQ=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc h1:cAKDfWh5VpdgMhJosfJnn5/FoN2SRZ4p7fJNX58YPaU=

@@ -13,6 +13,8 @@ func Run(args []string) bool {
 	cfg := config.NewFromFile(os.Getenv("CONFIG"))
 	log := cfg.Logging()
 
+	log.WithField("version", cfg.Version()).Info("Running version")
+
 	defer func() {
 		if rvr := recover(); rvr != nil {
 			log.Error("internal panicked: ", rvr)

@@ -16,6 +16,7 @@ import (
 	"common/data"
 	"common/data/model"
 	"common/data/store"
+	"common/locale"
 	"telegram-bot/internal/config"
 	"telegram-bot/internal/utils"
 )
@@ -126,6 +127,8 @@ func (p poster) buildMessage(channelID int64, news model.News, coins []model.Coi
 
 	references := strings.Builder{}
 
+	body := convert.FromPtr(news.Media.Text)
+
 	for _, resource := range news.Media.Resources {
 		if resource.Meta == nil {
 			continue
@@ -134,7 +137,9 @@ func (p poster) buildMessage(channelID int64, news model.News, coins []model.Coi
 		if err := json.Unmarshal(resource.Meta, &metaLinks); err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal media meta")
 		}
-		references.WriteString(fmt.Sprintf("%s <a href=\"%s\">%s</a>.\n", metaLinks.ID, metaLinks.URL, metaLinks.Title))
+		body = strings.ReplaceAll(body, fmt.Sprintf("[^%s^][%s]", metaLinks.ID, metaLinks.ID),
+			fmt.Sprintf("<a href=\"%s\">[%s]</a>", metaLinks.URL, metaLinks.ID))
+		references.WriteString(fmt.Sprintf("[%s] <a href=\"%s\">%s</a>.\n", metaLinks.ID, metaLinks.URL, metaLinks.Title))
 	}
 
 	coinsHashTags := strings.Builder{}
@@ -142,9 +147,11 @@ func (p poster) buildMessage(channelID int64, news model.News, coins []model.Coi
 		coinsHashTags.WriteString(fmt.Sprintf("#%s ", coin.Code))
 	}
 
-	msg.Text = fmt.Sprintf(p.cfg.Template(commonutils.NewsPost),
+	rawTemplate := p.cfg.Template(commonutils.NewsPost)
+
+	msg.Text = fmt.Sprintf(locale.PrepareTemplate(p.cfg, rawTemplate, convert.FromPtr(news.Locale)),
 		escapeKeepingHTML(convert.FromPtr(news.Media.Title)),
-		escapeKeepingHTML(convert.FromPtr(news.Media.Text)),
+		escapeKeepingHTML(body),
 		escapeKeepingHTML(references.String()),
 		escapeKeepingHTML(coinsHashTags.String()),
 		escapeKeepingHTML(convert.FromPtr(news.Source)),
@@ -155,14 +162,14 @@ func (p poster) buildMessage(channelID int64, news model.News, coins []model.Coi
 
 func (p poster) sendMultiple(msg *tgbotapi.MessageConfig) error {
 	partText := ""
-	parts := strings.Split(msg.Text, "\n\n")
+	parts := strings.Split(msg.Text, "\n")
 
 	for _, part := range parts {
 		if len(partText+part) < telegramMaxMessageLen {
 			if partText == "" {
 				partText = part
 			} else {
-				partText += fmt.Sprintf("\n\n%s", part)
+				partText += fmt.Sprintf("\n%s", part)
 			}
 		} else {
 			msg.Text = partText
@@ -180,12 +187,4 @@ func (p poster) sendMultiple(msg *tgbotapi.MessageConfig) error {
 	}
 
 	return nil
-}
-
-func escapeKeepingHTML(text string) string {
-	replacer := strings.NewReplacer(
-		"&", "&amp;",
-	)
-
-	return replacer.Replace(text)
 }
