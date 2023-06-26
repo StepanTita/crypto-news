@@ -5,6 +5,7 @@ import (
 
 	"common/convert"
 	"common/data/model"
+	"common/transform"
 	"parser/internal/utils"
 )
 
@@ -66,8 +67,8 @@ func (b Body) ToNews() model.News {
 
 	return model.News{
 		Media: &model.NewsMedia{
-			Title: utils.StripHtmlRegex(b.Title),
-			Text:  utils.StripHtmlRegex(description),
+			Title: transform.StripHtmlRegex(b.Title),
+			Text:  transform.StripHtmlRegex(description),
 			Resources: []model.NewsMediaResource{
 				{
 					Type: convert.ToPtr(utils.ImageType),

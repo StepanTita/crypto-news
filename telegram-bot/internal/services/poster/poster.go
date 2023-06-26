@@ -17,6 +17,7 @@ import (
 	"common/data/model"
 	"common/data/store"
 	"common/locale"
+	"common/transform"
 	"telegram-bot/internal/config"
 	"telegram-bot/internal/utils"
 )
@@ -90,13 +91,12 @@ func (p poster) Post(ctx context.Context) (int, error) {
 		}
 
 		for _, newsChannel := range newsChannelsMapping[n.ID] {
-			msg, err := p.buildMessage(newsChannel.ChannelID, n, coins)
+			msg, media, err := p.buildMessage(newsChannel.ChannelID, n, coins)
 			if err != nil {
 				p.log.WithError(err).Error("failed to build message")
 				continue
 			}
 
-			// TODO: use MessageEntity
 			if len(msg.Text) > telegramMaxMessageLen {
 				if err := p.sendMultiple(msg); err != nil {
 					p.log.WithError(err).Error("failed to send multiple posts to bot API")
@@ -106,6 +106,20 @@ func (p poster) Post(ctx context.Context) (int, error) {
 				if _, err := p.bot.Send(msg); err != nil {
 					p.log.WithError(err).Error("failed to send post to bot API")
 					continue
+				}
+			}
+
+			if media != nil {
+				if m, ok := media.(tgbotapi.PhotoConfig); ok {
+					if _, err := p.bot.Send(m); err != nil {
+						p.log.WithError(err).Error("failed to send media to bot API")
+						continue
+					}
+				} else if m, ok := media.(tgbotapi.MediaGroupConfig); ok {
+					if _, err := p.bot.SendMediaGroup(m); err != nil {
+						p.log.WithError(err).Error("failed to send media to bot API")
+						continue
+					}
 				}
 			}
 
@@ -121,7 +135,7 @@ func (p poster) Post(ctx context.Context) (int, error) {
 	return count, nil
 }
 
-func (p poster) buildMessage(channelID int64, news model.News, coins []model.Coin) (*tgbotapi.MessageConfig, error) {
+func (p poster) buildMessage(channelID int64, news model.News, coins []model.Coin) (*tgbotapi.MessageConfig, tgbotapi.Chattable, error) {
 	msg := tgbotapi.NewMessage(channelID, "")
 	msg.ParseMode = tgbotapi.ModeHTML
 
@@ -129,17 +143,27 @@ func (p poster) buildMessage(channelID int64, news model.News, coins []model.Coi
 
 	body := convert.FromPtr(news.Media.Text)
 
+	images := make([]any, 0, 5)
 	for _, resource := range news.Media.Resources {
-		if resource.Meta == nil {
-			continue
+		if convert.FromPtr(resource.Type) == model.ResourceTypeSource {
+			if resource.Meta == nil {
+				continue
+			}
+			var metaLinks model.MetaLinksData
+			if err := json.Unmarshal(resource.Meta, &metaLinks); err != nil {
+				return nil, nil, errors.Wrap(err, "failed to unmarshal media meta")
+			}
+			body = strings.ReplaceAll(body, fmt.Sprintf("[^%s^][%s]", metaLinks.ID, metaLinks.ID),
+				fmt.Sprintf("<a href=\"%s\">[%s]</a>", metaLinks.URL, metaLinks.ID))
+			references.WriteString(fmt.Sprintf("[%s] <a href=\"%s\">%s</a>.\n", metaLinks.ID, metaLinks.URL, metaLinks.Title))
+		} else if convert.FromPtr(resource.Type) == model.ResourceTypeImage {
+			image, err := downloadFile(convert.FromPtr(resource.URL))
+			if err != nil {
+				p.log.WithError(err).Errorf("failed to read image from url: %s", convert.FromPtr(resource.URL))
+				continue
+			}
+			images = append(images, tgbotapi.NewInputMediaPhoto(tgbotapi.FileBytes{Bytes: image, Name: uuid.NewString()}))
 		}
-		var metaLinks model.MetaLinksData
-		if err := json.Unmarshal(resource.Meta, &metaLinks); err != nil {
-			return nil, errors.Wrap(err, "failed to unmarshal media meta")
-		}
-		body = strings.ReplaceAll(body, fmt.Sprintf("[^%s^][%s]", metaLinks.ID, metaLinks.ID),
-			fmt.Sprintf("<a href=\"%s\">[%s]</a>", metaLinks.URL, metaLinks.ID))
-		references.WriteString(fmt.Sprintf("[%s] <a href=\"%s\">%s</a>.\n", metaLinks.ID, metaLinks.URL, metaLinks.Title))
 	}
 
 	coinsHashTags := strings.Builder{}
@@ -149,15 +173,21 @@ func (p poster) buildMessage(channelID int64, news model.News, coins []model.Coi
 
 	rawTemplate := p.cfg.Template(commonutils.NewsPost)
 
-	msg.Text = fmt.Sprintf(locale.PrepareTemplate(p.cfg, rawTemplate, convert.FromPtr(news.Locale)),
+	msg.Text = transform.CleanUnsupportedHTML(fmt.Sprintf(locale.PrepareTemplate(p.cfg, rawTemplate, convert.FromPtr(news.Locale)),
 		escapeKeepingHTML(convert.FromPtr(news.Media.Title)),
 		escapeKeepingHTML(body),
 		escapeKeepingHTML(references.String()),
 		escapeKeepingHTML(coinsHashTags.String()),
 		escapeKeepingHTML(convert.FromPtr(news.Source)),
-	)
+	))
 
-	return &msg, nil
+	if len(images) == 1 {
+		return &msg, tgbotapi.NewPhoto(channelID, images[0].(tgbotapi.InputMediaPhoto).Media), nil
+	} else if len(images) > 1 {
+		return &msg, tgbotapi.NewMediaGroup(channelID, images), nil
+	}
+
+	return &msg, nil, nil
 }
 
 func (p poster) sendMultiple(msg *tgbotapi.MessageConfig) error {

@@ -11,7 +11,7 @@ type ParsedBody interface {
 }
 
 type Crawler interface {
-	Crawl(ctx context.Context) ([]ParsedBody, int, error)
+	Crawl(ctx context.Context) (any, int, error)
 }
 
-type CrawlFunc func(ctx context.Context) ([]ParsedBody, int, error)
+type CrawlFunc func(ctx context.Context) (any, int, error)

@@ -45,7 +45,7 @@ func NewCrawler(cfg config.Config) crawler.Crawler {
 	}
 }
 
-func (c CryptoPanicCrawler) Crawl(ctx context.Context) ([]crawler.ParsedBody, int, error) {
+func (c CryptoPanicCrawler) Crawl(ctx context.Context) (any, int, error) {
 	latestNews, err := c.dataProvider.NewsProvider().BySources(utils.CryptoPanic).GetLatest(ctx)
 	if err != nil {
 		if !errors.Is(err, data.ErrNotFound) {
@@ -70,13 +70,13 @@ func (c CryptoPanicCrawler) Crawl(ctx context.Context) ([]crawler.ParsedBody, in
 		return nil, 0, errors.Wrap(err, "failed to request crypto-panic API")
 	}
 
-	if statusCode != http.StatusOK {
-		return nil, statusCode, nil
-	}
-
 	var b map[string]json.RawMessage
 	if err := json.NewDecoder(body).Decode(&b); err != nil {
 		return nil, statusCode, errors.Wrap(err, "failed to decode response body")
+	}
+
+	if statusCode != http.StatusOK {
+		return b, statusCode, nil
 	}
 
 	var out []Body
