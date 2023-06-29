@@ -129,7 +129,9 @@ func (p poster) Post(ctx context.Context) (int, error) {
 	}
 
 	if err := p.dataProvider.NewsChannelsProvider().BySources(p.cfg.Sources()).ByIDs(successfulIDs).Remove(ctx, model.NewsChannel{}); err != nil {
-		return count, errors.Wrap(err, "failed to remove entity")
+		if !errors.Is(err, data.ErrNotFound) {
+			return count, errors.Wrap(err, "failed to remove entity")
+		}
 	}
 
 	return count, nil
