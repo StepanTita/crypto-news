@@ -85,6 +85,23 @@ type PreferencesChannelCoinsProvider interface {
 	ByChannel(channelID int64) PreferencesChannelCoinsProvider
 }
 
+type UsersProvider interface {
+	Inserter[model.User]
+	Getter[model.User]
+	Selector[model.User]
+
+	ByUsername(username string) UsersProvider
+}
+
+type WhitelistProvider interface {
+	Inserter[model.Whitelist]
+	Getter[model.Whitelist]
+	Remover[model.Whitelist]
+
+	ByUsername(username string) WhitelistProvider
+	ExtractToken(ctx context.Context, token uuid.UUID) error
+}
+
 // No-SQL
 
 type KVProvider interface {

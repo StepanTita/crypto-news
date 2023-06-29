@@ -10,7 +10,7 @@ import (
 )
 
 type Model interface {
-	News | Coin | Channel | NewsCoin | NewsChannel | PreferencesChannelCoin | UpdateNewsParams
+	News | Coin | Channel | NewsCoin | NewsChannel | PreferencesChannelCoin | UpdateNewsParams | User | Whitelist
 	TableName() string
 }
 
