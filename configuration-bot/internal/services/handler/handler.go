@@ -62,6 +62,9 @@ func (h handler) HandleCommand(ctx context.Context, incomingMsg *tgbotapi.Messag
 
 	user, err := h.dataProvider.UsersProvider().ByUsername(incomingMsg.From.UserName).Get(ctx)
 	if err != nil {
+		if errors.Is(err, data.ErrNotFound) {
+			return &msg, commonerrors.ErrAccessDenied
+		}
 		return &msg, errors.Wrapf(err, "failed to get user by username: %s", incomingMsg.From.UserName)
 	}
 

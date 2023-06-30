@@ -32,5 +32,5 @@ func CleanUnsupportedHTML(input string) string {
 		output = strings.ReplaceAll(output, tag[0], "")
 	}
 
-	return output
+	return strings.ReplaceAll(output, "<br>", "\n")
 }

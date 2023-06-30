@@ -64,7 +64,7 @@ services:
     command: -c "telegram-bot run"
   configuration-bot:
     image: stepancons/crypto-news-configuration-bot:dev
-    container_name: configuration-bot
+    container_name: configuration-bot-dev
     networks:
       - dev
     volumes:
