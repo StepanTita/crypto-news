@@ -66,7 +66,7 @@ services:
     image: stepancons/crypto-news-configuration-bot:dev
     container_name: configuration-bot
     networks:
-      - default
+      - dev
     volumes:
       - type: bind
         source: ./config.docker.dev.yaml
