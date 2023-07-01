@@ -1,7 +1,7 @@
 github.com/StepanTita/go-BingDALLE v0.0.1-alpha1 h1:fME/AVF9bmVxszyEIqNINNx4tKhD/wxTr47RvXlAomo=
 github.com/StepanTita/go-BingDALLE v0.0.1-alpha1/go.mod h1:hFA2T0SfsUTjV2QPd4CtHcqwmWxpczFzQeZxq3J0Bpg=
-github.com/StepanTita/go-EdgeGPT v0.0.1-release h1:6ZQOIzZRHlPOJMOR+MOrFZcfcXSea6JHzF3CG7TOJcY=
-github.com/StepanTita/go-EdgeGPT v0.0.1-release/go.mod h1:QHecOh800NnW9+LzXe7I74xH4N/TJzXiCCXYYQH7u4I=
+github.com/StepanTita/go-EdgeGPT v0.0.1-release.0.20230701021737-9d86dde1ca7c h1:LX+BrYsXmr8/MU6i0p4acdwKzYDteh/Ud7jwVglwHjA=
+github.com/StepanTita/go-EdgeGPT v0.0.1-release.0.20230701021737-9d86dde1ca7c/go.mod h1:QHecOh800NnW9+LzXe7I74xH4N/TJzXiCCXYYQH7u4I=
 github.com/cpuguy83/go-md2man/v2 v2.0.2 h1:p1EgwI/C7NhT0JmVkwCD2ZBK8j4aeHQX2pMHHBfMQ6w=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

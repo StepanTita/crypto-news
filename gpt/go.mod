@@ -3,7 +3,7 @@ module gpt
 go 1.20
 
 require (
-	github.com/StepanTita/go-EdgeGPT v0.0.1-release
+	github.com/StepanTita/go-EdgeGPT v0.0.1-release.0.20230701021737-9d86dde1ca7c
 	github.com/google/uuid v1.3.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
