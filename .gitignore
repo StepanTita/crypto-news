@@ -1,4 +1,4 @@
 .idea
-dbconfig.yaml
+dbconfig.yml
 config.*.yaml
 *.iml

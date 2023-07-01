@@ -36,6 +36,7 @@ type yamlConfig struct {
 		gptconfig.YamlGPTConfig `yaml:",inline"`
 		GenerateEvery           time.Duration `yaml:"generate_every"`
 		ShortSummaryPrompt      string        `yaml:"short_summary_prompt"`
+		ImagesPrompt            string        `yaml:"images_prompt"`
 	} `yaml:"gpt"`
 }
 
@@ -55,6 +56,6 @@ func NewFromFile(path string) Config {
 	return &config{
 		Config:    commoncfg.New(cfg.LogLevel, cfg.Runtime, cfg.Database, cfg.KVStore),
 		gptCfg:    gptconfig.NewFromGPTConfig(cfg.GPTConfig.YamlGPTConfig),
-		Generator: NewGenerator(cfg.GPTConfig.GenerateEvery, cfg.GPTConfig.ShortSummaryPrompt),
+		Generator: NewGenerator(cfg.GPTConfig.GenerateEvery, cfg.GPTConfig.ShortSummaryPrompt, cfg.GPTConfig.ImagesPrompt),
 	}
 }

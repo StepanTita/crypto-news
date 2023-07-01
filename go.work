@@ -9,4 +9,5 @@ use (
 	twitter-bot
 	templates
 	localization
+	configuration-bot
 )

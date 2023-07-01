@@ -64,7 +64,11 @@ func (s *service) Run(ctx context.Context) error {
 			}
 
 			if t.StatusCode != http.StatusOK {
-				s.log.WithField("status-code", t.StatusCode).Warn("request returned unsuccessful status code...")
+				info, _ := t.StatusBody["info"] // just log empty if not found, need only to avoid panics
+				s.log.WithFields(logrus.Fields{
+					"status-code": t.StatusCode,
+					"info":        info,
+				}).Warn("request returned unsuccessful status code...")
 				continue
 			}
 

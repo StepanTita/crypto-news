@@ -17,6 +17,7 @@ const (
 
 const (
 	ResourceTypeSource = "source"
+	ResourceTypeImage  = "image"
 )
 
 type News struct {
