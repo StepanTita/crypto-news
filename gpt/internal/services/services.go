@@ -56,12 +56,14 @@ func (s service) Run(ctx context.Context) error {
 
 			s.log.WithField("locale", locale).Debug("Generating for locale")
 
-			news, digestResponse, err := s.generateForLocale(ctx, bot, locale)
+			timestamp := common.CurrentTimestamp()
+
+			news, digestResponse, err := s.generateForLocale(ctx, bot, locale, timestamp)
 			if err != nil {
 				return errors.Wrapf(err, "failed to generate for locale: %s", locale)
 			}
 
-			summaryHistory, currentSummary, err := s.readShortSummary(ctx, bot)
+			summaryHistory, currentSummary, err := s.readShortSummary(ctx, bot, locale)
 			if err != nil {
 				return errors.Wrap(err, "failed to read short summary")
 			}
@@ -71,7 +73,8 @@ func (s service) Run(ctx context.Context) error {
 				return errors.Wrap(err, "failed to set previous digest to kv-store")
 			}
 
-			if locale == language.English.String() {
+			// for now generate images only 4 times a day
+			if locale == language.English.String() && timestamp.Hour()%8 == 0 {
 				resources, err := s.generateImages(ctx, bot, currentSummary)
 				if err != nil {
 					return errors.Wrapf(err, "failed to generate images from summary: %s", currentSummary)
@@ -93,11 +96,12 @@ func (s service) Run(ctx context.Context) error {
 	return nil
 }
 
-func (s service) readShortSummary(ctx context.Context, bot chat_bot.ChatBot) (string, string, error) {
+func (s service) readShortSummary(ctx context.Context, bot chat_bot.ChatBot, locale string) (string, string, error) {
 	deadlineCtx, cancel := context.WithDeadline(ctx, time.Now().Add(10*time.Minute))
 	defer cancel()
 
-	parsedResponsesChan, err := bot.Ask(deadlineCtx, s.cfg.ShortSummaryPrompt(), "{{language}}", s.cfg.GPTConfig().Style(), false, display.English.Tags().Name(language.English))
+	lang := display.English.Tags().Name(language.Make(locale))
+	parsedResponsesChan, err := bot.Ask(deadlineCtx, s.cfg.ShortSummaryPrompt(), "{{language}}", s.cfg.GPTConfig().Style(), false, lang)
 	if err != nil {
 		return "", "", errors.Wrap(err, "failed to ask bot")
 	}
@@ -107,17 +111,17 @@ func (s service) readShortSummary(ctx context.Context, bot chat_bot.ChatBot) (st
 		return "", "", errors.Wrap(err, "failed to generate short summary")
 	}
 
-	prevDigest, err := s.dataProvider.KVProvider().Get(ctx, keyPrevDigest)
+	prevDigest, err := s.dataProvider.KVProvider().Get(ctx, fmt.Sprintf(keyPrevDigest, locale))
 	if err != nil {
 		if !errors.Is(err, data.ErrNotFound) {
 			return "", "", errors.Wrap(err, "failed to get previous digest from kv-store")
 		}
 	}
-	prevDigest = fmt.Sprintf("%s\n%s", prevDigest, response.content)
+	prevDigest = fmt.Sprintf("%s\n%s", prevDigest, strings.ReplaceAll(response.content, "\n", ""))
 
 	// TODO might need to estimate on some language that is longer than english
 	prompt := fmt.Sprintf("%s\nTry to avoid information from your previous summary:", s.cfg.GPTConfig().InitialPrompt())
-	promptLen := bot.EstimatePrompt(prompt, s.cfg.GPTConfig().Context(), display.English.Tags().Name(language.English))
+	promptLen := bot.EstimatePrompt(prompt, s.cfg.GPTConfig().Context(), lang)
 	residualLen := maxInputChars - promptLen
 	for len(prevDigest) > residualLen {
 		prevDigest = prevDigest[len(prevDigest)-residualLen:]
@@ -162,7 +166,7 @@ func (s service) readResponses(ctx context.Context, responsesChan <-chan chat_bo
 	return response, nil
 }
 
-func (s service) generateForLocale(ctx context.Context, bot chat_bot.ChatBot, locale string) (*model.News, *generationsResponse, error) {
+func (s service) generateForLocale(ctx context.Context, bot chat_bot.ChatBot, locale string, timestamp time.Time) (*model.News, *generationsResponse, error) {
 	var prevDigest string
 	var err error
 	prevDigest, err = s.dataProvider.KVProvider().Get(ctx, keyPrevDigest)
@@ -220,12 +224,10 @@ func (s service) generateForLocale(ctx context.Context, bot chat_bot.ChatBot, lo
 		}
 	}
 
-	date := common.CurrentTimestamp()
-
 	news := &model.News{
 		Locale: convert.ToPtr(locale),
 		Media: &model.NewsMedia{
-			Title:     convert.ToPtr(fmt.Sprintf("Digest hour: %d, Day: %d", date.Hour(), date.Day())),
+			Title:     convert.ToPtr(fmt.Sprintf("Digest hour: %d, Day: %d", timestamp.Hour(), timestamp.Day())),
 			Text:      convert.ToPtr(digestResponse.content),
 			Resources: resourcesList,
 		},
@@ -234,8 +236,8 @@ func (s service) generateForLocale(ctx context.Context, bot chat_bot.ChatBot, lo
 	}
 
 	s.log.WithFields(logrus.Fields{
-		"digest-hour": date.Hour(),
-		"digest-day":  date.Day(),
+		"digest-hour": timestamp.Hour(),
+		"digest-day":  timestamp.Day(),
 	}).Debug("Finished generating")
 	return news, digestResponse, nil
 }
