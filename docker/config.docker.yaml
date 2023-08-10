@@ -3,14 +3,14 @@ crawl_every: 15s
 rate_limit: 5
 database:
   driver: postgres
-  host: localhost
+  host: postgres_db
   user: postgres
-  password: test
+  password: postgres
   name: dev
-  port: 6060
+  port: 5432
   ssl_mode: disable
 kv_store:
-  address: localhost:6379
+  address: redis_db:6379
 #  password:
 service_providers:
   services:
