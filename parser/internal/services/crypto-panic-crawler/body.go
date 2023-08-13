@@ -6,8 +6,11 @@ import (
 	"common/convert"
 	"common/data/model"
 	"common/transform"
+	"parser/internal/services/crawler"
 	"parser/internal/utils"
 )
+
+var _ crawler.ParsedBody = Body{}
 
 type Body struct {
 	Kind   *string `json:"kind"`
@@ -52,7 +55,7 @@ func toCoin(c Currency) model.Coin {
 	}
 }
 
-func (b Body) ToNews() model.News {
+func (b Body) ToModel() any {
 	var imageUrl *string
 	var description *string
 	if b.Metadata != nil {
@@ -78,7 +81,7 @@ func (b Body) ToNews() model.News {
 		},
 		PublishedAt:    b.PublishedAt,
 		Url:            url,
-		Source:         convert.ToPtr(utils.CryptoPanic),
+		Source:         convert.ToPtr(cryptoPanic),
 		Status:         convert.ToPtr(model.StatusPending),
 		OriginalSource: b.Source.Url,
 		Coins:          utils.Map(b.Currencies, toCoin),

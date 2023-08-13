@@ -2,12 +2,10 @@ package crawler
 
 import (
 	"context"
-
-	"common/data/model"
 )
 
 type ParsedBody interface {
-	ToNews() model.News
+	ToModel() any
 }
 
 type Crawler interface {

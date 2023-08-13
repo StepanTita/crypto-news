@@ -20,6 +20,8 @@ import (
 	"parser/internal/utils"
 )
 
+const cryptoPanic = "crypto-panic"
+
 type CryptoPanicCrawler struct {
 	log *logrus.Entry
 
@@ -35,9 +37,9 @@ func NewCrawler(cfg config.Config) crawler.Crawler {
 	return &CryptoPanicCrawler{
 		log: cfg.Logging().WithField("service", "[CRYPTO-PANIC-CRAWLER]"),
 
-		authToken: cfg.Credentials(utils.CryptoPanic)["auth_token"],
-		url:       cfg.Credentials(utils.CryptoPanic)["url"],
-		path:      cfg.Credentials(utils.CryptoPanic)["path"],
+		authToken: cfg.Credentials(cryptoPanic)["auth_token"],
+		url:       cfg.Credentials(cryptoPanic)["url"],
+		path:      cfg.Credentials(cryptoPanic)["path"],
 
 		dataProvider: store.New(cfg),
 
@@ -46,7 +48,7 @@ func NewCrawler(cfg config.Config) crawler.Crawler {
 }
 
 func (c CryptoPanicCrawler) Crawl(ctx context.Context) (any, int, error) {
-	latestNews, err := c.dataProvider.NewsProvider().BySources(utils.CryptoPanic).GetLatest(ctx)
+	latestNews, err := c.dataProvider.NewsProvider().BySources(cryptoPanic).GetLatest(ctx)
 	if err != nil {
 		if !errors.Is(err, data.ErrNotFound) {
 			return nil, 0, errors.Wrap(err, "failed to query news provider by source")
