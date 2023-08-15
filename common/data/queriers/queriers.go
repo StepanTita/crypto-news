@@ -102,6 +102,22 @@ type WhitelistProvider interface {
 	ExtractToken(ctx context.Context, token uuid.UUID) error
 }
 
+type TitlesProvider interface {
+	Inserter[model.Title]
+	Selector[model.Title]
+	Updater[model.UpdateTitleParams, model.Title]
+
+	ByStatus(status string) TitlesProvider
+
+	InsertUniqueBatch(ctx context.Context, entities []model.Title) error
+}
+
+type RawNewsWebpagesProvider interface {
+	Inserter[model.RawNewsWebpage]
+	Selector[model.RawNewsWebpage]
+	Remover[model.RawNewsWebpage]
+}
+
 // No-SQL
 
 type KVProvider interface {

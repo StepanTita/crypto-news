@@ -1,33 +1,38 @@
 package config
 
-import "github.com/pkg/errors"
+import (
+	"gopkg.in/yaml.v3"
+
+	"common/containers/deep_map"
+)
 
 type ServiceProvider interface {
-	Credentials(string) map[string]string
-	CrawlersCount() int
+	Credentials(...string) string
 }
 
 type serviceProvider struct {
-	providersConfig yamlServiceProviderConfig
+	providersConfig *deep_map.DeepMap
 }
 
 type yamlServiceProviderConfig struct {
-	Services map[string]map[string]string `yaml:"services"`
+	Services yaml.Node `yaml:"services"`
 }
 
 func NewServiceProvider(providersCreds yamlServiceProviderConfig) ServiceProvider {
 	return &serviceProvider{
-		providersConfig: providersCreds,
+		providersConfig: deep_map.NewDeepMap(providersCreds.Services),
 	}
 }
 
-func (s serviceProvider) Credentials(providerName string) map[string]string {
-	if _, ok := s.providersConfig.Services[providerName]; !ok {
-		panic(errors.Errorf("unknown provider %s", providerName))
-	}
-	return s.providersConfig.Services[providerName]
-}
+func (s serviceProvider) Credentials(keys ...string) string {
+	currNode := s.providersConfig
 
-func (s serviceProvider) CrawlersCount() int {
-	return len(s.providersConfig.Services)
+	var err error
+	for _, key := range keys {
+		currNode, err = currNode.Get(key)
+		if err != nil {
+			panic(err)
+		}
+	}
+	return currNode.GetScalar()
 }

@@ -5,20 +5,9 @@ import (
 	"strings"
 
 	"golang.org/x/exp/slices"
-
-	"common/convert"
 )
 
-var cleanHtmlRegex = regexp.MustCompile(`<.*?>`)
 var allHtmlTagsRegex = regexp.MustCompile(`<([A-Za-z][A-Za-z0-9]*)[^>]*>(.*?)</[A-Za-z][A-Za-z0-9]*>`)
-
-// StripHtmlRegex This method uses a regular expresion to remove HTML tags.
-func StripHtmlRegex(s *string) *string {
-	if s == nil {
-		return nil
-	}
-	return convert.ToPtr(cleanHtmlRegex.ReplaceAllString(*s, ""))
-}
 
 func CleanUnsupportedHTML(input string) string {
 	matches := allHtmlTagsRegex.FindAllStringSubmatch(input, -1)

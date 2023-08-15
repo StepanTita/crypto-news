@@ -4,7 +4,6 @@ import (
 	"os"
 	"time"
 
-	gptconfig "github.com/StepanTita/go-EdgeGPT/config"
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
 
@@ -14,17 +13,13 @@ import (
 type Config interface {
 	commoncfg.Config
 	Generator
-	GPTConfig() gptconfig.Config
+	BotConfig
 }
 
 type config struct {
 	commoncfg.Config
 	Generator
-	gptCfg gptconfig.Config
-}
-
-func (c config) GPTConfig() gptconfig.Config {
-	return c.gptCfg
+	BotConfig
 }
 
 type yamlConfig struct {
@@ -33,10 +28,9 @@ type yamlConfig struct {
 	KVStore   commoncfg.YamlKVStoreConfig  `yaml:"kv_store"`
 	Runtime   commoncfg.YamlRuntimeConfig  `yaml:"runtime"`
 	GPTConfig struct {
-		gptconfig.YamlGPTConfig `yaml:",inline"`
-		GenerateEvery           time.Duration `yaml:"generate_every"`
-		ShortSummaryPrompt      string        `yaml:"short_summary_prompt"`
-		ImagesPrompt            string        `yaml:"images_prompt"`
+		AuthToken     string        `yaml:"auth_token"`
+		GenerateEvery time.Duration `yaml:"generate_every"`
+		ImagesPrompt  string        `yaml:"images_prompt"`
 	} `yaml:"gpt"`
 }
 
@@ -55,7 +49,7 @@ func NewFromFile(path string) Config {
 
 	return &config{
 		Config:    commoncfg.New(cfg.LogLevel, cfg.Runtime, cfg.Database, cfg.KVStore),
-		gptCfg:    gptconfig.NewFromGPTConfig(cfg.GPTConfig.YamlGPTConfig),
-		Generator: NewGenerator(cfg.GPTConfig.GenerateEvery, cfg.GPTConfig.ShortSummaryPrompt, cfg.GPTConfig.ImagesPrompt),
+		BotConfig: NewBotConfig(cfg.GPTConfig.AuthToken),
+		Generator: NewGenerator(cfg.GPTConfig.GenerateEvery, cfg.GPTConfig.ImagesPrompt),
 	}
 }

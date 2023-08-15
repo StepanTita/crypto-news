@@ -10,12 +10,6 @@ import (
 )
 
 const (
-	StatusPending   = "pending"
-	StatusProcessed = "processed"
-	StatusFailed    = "failed"
-)
-
-const (
 	ResourceTypeSource = "source"
 	ResourceTypeImage  = "image"
 )

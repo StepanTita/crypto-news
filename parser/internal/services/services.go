@@ -3,146 +3,136 @@ package services
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"common"
-
+	"common/convert"
 	"common/data"
 	"common/data/model"
 	"common/data/store"
 	"parser/internal/config"
+	browse_ai_crawler "parser/internal/services/browse-ai-crawler"
 	"parser/internal/services/crawler"
-	crypto_panic_crawler "parser/internal/services/crypto-panic-crawler"
+	url_crawler "parser/internal/services/url-crawler"
 	"parser/internal/services/worker"
 )
-
-// TODO: add more when new sources added
-const workersNum = 1
 
 type Service interface {
 	Run(ctx context.Context) error
 }
 
+const workersNum = 1
+
 type service struct {
 	cfg config.Config
 	log *logrus.Entry
 
-	crawlers []crawler.Crawler
+	titlesCrawlers []crawler.Crawler
+	newsCrawler    crawler.Crawler
 
 	dataProvider store.DataProvider
 }
 
 func NewService(cfg config.Config) Service {
 	return &service{
-		cfg:          cfg,
-		log:          cfg.Logging().WithField("service", "[PARSER]"),
-		crawlers:     []crawler.Crawler{crypto_panic_crawler.NewCrawler(cfg)},
+		cfg: cfg,
+		log: cfg.Logging().WithField("service", "[TITLES-PARSER]"),
+		titlesCrawlers: []crawler.Crawler{
+			browse_ai_crawler.NewCrawler(cfg, cfg.Credentials(browse_ai_crawler.BrowseAI, "robots", "coin_telegraph")),
+		},
+		newsCrawler:  url_crawler.NewCrawler(cfg),
 		dataProvider: store.New(cfg),
 	}
 }
 
 func (s *service) Run(ctx context.Context) error {
 	s.log.Infof("Staring crawling every %v...", s.cfg.CrawlEvery())
-	return common.RunEvery(s.cfg.CrawlEvery(), func() error {
-		s.log.Debugf("Crawling %d...", len(s.crawlers))
+	go func() {
+		err := common.RunEvery(s.cfg.CrawlEvery(), func() error {
+			s.log.Debugf("Crawling %d...", len(s.titlesCrawlers))
 
-		channels, err := s.dataProvider.ChannelsProvider().Select(ctx)
+			wrk := worker.New(workersNum, s.cfg)
+
+			wrk.Produce(ctx, s.titlesCrawlers)
+			for _, t := range wrk.Work(ctx) {
+				if t.Err != nil {
+					return errors.Wrap(t.Err, "failed to crawl")
+				}
+
+				if t.StatusCode != http.StatusOK {
+					s.log.WithFields(logrus.Fields{
+						"status-code": t.StatusCode,
+						"info":        t.StatusBody,
+					}).Warn("request returned unsuccessful status code...")
+					continue
+				}
+
+				bodiesBatch := t.Body
+
+				if len(bodiesBatch) == 0 {
+					s.log.Debug("early stopping, no new titles...")
+					continue
+				}
+
+				titlesBatch := crawler.ToModelBatch[model.Title](bodiesBatch)
+				s.log.Debugf("Adding new batch to the database: %d", len(bodiesBatch))
+				err := s.dataProvider.TitlesProvider().InsertUniqueBatch(ctx, titlesBatch)
+				if err != nil {
+					return errors.Wrap(err, "failed to insert batch of titles")
+				}
+			}
+			return nil
+		})
+
+		if err != nil {
+
+		}
+	}()
+
+	return common.RunEvery(s.cfg.CrawlEvery()+15*time.Second, func() error {
+		body, statusCode, err := s.newsCrawler.Crawl(ctx)
 		if err != nil {
 			if !errors.Is(err, data.ErrNotFound) {
-				return errors.Wrap(err, "failed to select channels")
+				return errors.Wrap(err, "failed to crawl url")
 			}
+			return nil
 		}
 
-		wrk := worker.New(workersNum, s.cfg)
-
-		wrk.Produce(ctx, s.crawlers)
-		for _, t := range wrk.Work(ctx) {
-			if t.Err != nil {
-				return errors.Wrap(t.Err, "failed to crawl")
-			}
-
-			if t.StatusCode != http.StatusOK {
-				info, _ := t.StatusBody["info"] // just log empty if not found, need only to avoid panics
-				s.log.WithFields(logrus.Fields{
-					"status-code": t.StatusCode,
-					"info":        info,
-				}).Warn("request returned unsuccessful status code...")
-				continue
-			}
-
-			bodiesBatch := t.Body
-
-			if len(bodiesBatch) == 0 {
-				s.log.Debug("early stopping, no new posts...")
-				continue
-			}
-
-			newsBatch := toNewsBatch(bodiesBatch)
-			s.log.Debugf("Adding new batch to the database: %d", len(bodiesBatch))
-			err := s.dataProvider.NewsProvider().InsertBatch(ctx, newsBatch)
-			if err != nil {
-				return errors.Wrap(err, "failed to insert batch of news")
-			}
-
-			newsChannelsBatch := toNewsChannelsBatch(newsBatch, channels)
-			if err = s.dataProvider.NewsChannelsProvider().InsertBatch(ctx, newsChannelsBatch); err != nil {
-				return errors.Wrap(err, "failed to insert batch of news-channels")
-			}
-
-			coinsBatch, newsCoinsBatch := splitCoinsBatch(newsBatch)
-			if err = s.dataProvider.CoinsProvider().UpsertCoinsBatch(ctx, coinsBatch); err != nil {
-				return errors.Wrap(err, "failed to insert batch of coins")
-			}
-
-			if err = s.dataProvider.NewsCoinsProvider().InsertBatch(ctx, newsCoinsBatch); err != nil {
-				return errors.Wrap(err, "failed to insert batch of news")
-			}
+		if statusCode != http.StatusOK {
+			s.log.WithFields(logrus.Fields{
+				"status-code": statusCode,
+				"info":        body,
+			}).Warn("request returned unsuccessful status code...")
+			return nil
 		}
+
+		bodiesBatch, ok := body.([]crawler.ParsedBody)
+		if !ok {
+			return errors.New("could not cast output to parsed body")
+		}
+
+		if len(bodiesBatch) == 0 {
+			s.log.Debug("early stopping, no new titles...")
+			return nil
+		}
+
+		rawNewsWebpagesBatch := crawler.ToModelBatch[model.RawNewsWebpage](bodiesBatch)
+		s.log.Debugf("Adding new batch to the database: %d", len(bodiesBatch))
+		err = s.dataProvider.RawNewsWebpagesProvider().InsertBatch(ctx, rawNewsWebpagesBatch)
+		if err != nil {
+			return errors.Wrap(err, "failed to insert batch of titles")
+		}
+
+		_, err = s.dataProvider.TitlesProvider().Update(ctx, model.UpdateTitleParams{
+			Status: convert.ToPtr(model.StatusProcessed),
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to update titles status to processed")
+		}
+
 		return nil
 	})
-}
-
-func toNewsBatch(bodies []crawler.ParsedBody) []model.News {
-	newsBatch := make([]model.News, len(bodies))
-	for i := range bodies {
-		newsBatch[i] = bodies[i].ToNews()
-	}
-	return newsBatch
-}
-
-func splitCoinsBatch(newsBatch []model.News) ([]model.Coin, []model.NewsCoin) {
-	uniqueCoinsMap := make(map[string]model.Coin)
-	newsCoins := make([]model.NewsCoin, 0, 10)
-	for _, n := range newsBatch {
-		for _, c := range n.Coins {
-			uniqueCoinsMap[c.Code] = c
-			newsCoins = append(newsCoins, model.NewsCoin{
-				Code:   c.Code,
-				NewsID: n.ID,
-			})
-		}
-	}
-
-	uniqueCoins := make([]model.Coin, 0, len(uniqueCoinsMap))
-	for _, coin := range uniqueCoinsMap {
-		uniqueCoins = append(uniqueCoins, coin)
-	}
-	return uniqueCoins, newsCoins
-}
-
-func toNewsChannelsBatch(newsBatch []model.News, channels []model.Channel) []model.NewsChannel {
-	newsChannels := make([]model.NewsChannel, len(newsBatch)*len(channels))
-	i := 0
-	for _, n := range newsBatch {
-		for _, c := range channels {
-			newsChannels[i] = model.NewsChannel{
-				ChannelID: c.ChannelID,
-				NewsID:    n.ID,
-			}
-			i++
-		}
-	}
-	return newsChannels
 }

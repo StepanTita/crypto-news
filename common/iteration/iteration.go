@@ -1,4 +1,4 @@
-package utils
+package iteration
 
 func Map[T, K any](arr []T, f func(T) K) []K {
 	res := make([]K, len(arr))

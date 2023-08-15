@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"common"
+	"common/convert"
 	"common/data/drivers/postgres"
 	"common/data/model"
 	"common/data/queriers"
@@ -74,5 +75,13 @@ func (n news) Get(ctx context.Context) (*model.News, error) {
 }
 
 func (n news) Select(ctx context.Context) ([]model.News, error) {
-	return n.Selector.WithExpr(n.expr).Select(ctx)
+	n.Selector = n.Selector.WithExpr(n.expr)
+	return n.Selector.Select(ctx)
+}
+
+func (n news) Update(ctx context.Context, news model.UpdateNewsParams) ([]model.News, error) {
+	n.Updater = n.Updater.WithExpr(n.expr)
+
+	news.UpdatedAt = convert.ToPtr(common.CurrentTimestamp())
+	return n.Updater.Update(ctx, news)
 }

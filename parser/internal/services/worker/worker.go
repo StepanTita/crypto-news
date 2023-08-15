@@ -2,7 +2,6 @@ package worker
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -73,8 +72,6 @@ func (w worker) work(ctx context.Context, name string) {
 		switch t := body.(type) {
 		case []crawler.ParsedBody:
 			task.Body = t
-		case map[string]json.RawMessage:
-			task.StatusBody = t
 		}
 
 		task.StatusCode = code

@@ -12,6 +12,8 @@ import (
 	"common/data/drivers/postgres/channels"
 	"common/data/drivers/postgres/news_channels"
 	"common/data/drivers/postgres/preferences_channel_coins"
+	"common/data/drivers/postgres/raw_news_webpages"
+	"common/data/drivers/postgres/titles"
 	"common/data/drivers/postgres/users"
 	"common/data/drivers/postgres/whitelist"
 	"common/data/drivers/redis/kv_provider"
@@ -33,6 +35,8 @@ type DataProvider interface {
 	PreferencesChannelCoinsProvider() queriers.PreferencesChannelCoinsProvider
 	WhitelistProvider() queriers.WhitelistProvider
 	UsersProvider() queriers.UsersProvider
+	TitlesProvider() queriers.TitlesProvider
+	RawNewsWebpagesProvider() queriers.RawNewsWebpagesProvider
 
 	InTx(ctx context.Context, fn func(dp DataProvider) error) error
 
@@ -70,6 +74,14 @@ func (d dataProvider) UsersProvider() queriers.UsersProvider {
 
 func (d dataProvider) WhitelistProvider() queriers.WhitelistProvider {
 	return whitelist.New(d.ext(), d.log)
+}
+
+func (d dataProvider) TitlesProvider() queriers.TitlesProvider {
+	return titles.New(d.ext(), d.log)
+}
+
+func (d dataProvider) RawNewsWebpagesProvider() queriers.RawNewsWebpagesProvider {
+	return raw_news_webpages.New(d.ext(), d.log)
 }
 
 func (d dataProvider) InTx(ctx context.Context, fn func(dp DataProvider) error) error {

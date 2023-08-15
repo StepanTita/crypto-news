@@ -37,6 +37,12 @@ func tryRunMultiple(trials int, f func() error) error {
 	return errTrace
 }
 
+type funcBackoff struct {
+	lastRun *time.Time
+	backOff time.Duration
+	trial   int
+}
+
 func RunEveryWithBackoff(d time.Duration, minBackoff, maxBackoff time.Duration, fs ...func() error) {
 
 	backOffs := make([]*funcBackoff, len(fs))

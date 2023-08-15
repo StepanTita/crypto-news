@@ -16,10 +16,10 @@ import (
 	"common/data"
 	"common/data/model"
 	"common/data/store"
+	"common/iteration"
 	"common/locale"
 	"common/transform"
 	"telegram-bot/internal/config"
-	"telegram-bot/internal/utils"
 )
 
 const telegramMaxMessageLen = 4096
@@ -71,7 +71,7 @@ func (p poster) Post(ctx context.Context) (int, error) {
 		newsChannelsMapping[newsChannel.NewsID] = append(newsChannelsMapping[newsChannel.NewsID], newsChannel)
 	}
 
-	newsIDs = utils.Unique(newsIDs)
+	newsIDs = iteration.Unique(newsIDs)
 	news, err := p.dataProvider.NewsProvider().ByIDs(newsIDs).Select(ctx)
 	if err != nil {
 		if !errors.Is(err, data.ErrNotFound) {

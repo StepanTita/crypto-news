@@ -1,10 +1,9 @@
-package common
+package reflection
 
 import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 
 	"golang.org/x/exp/slices"
 )
@@ -54,10 +53,4 @@ func GetTypeName(v interface{}) string {
 	} else {
 		return t.String()
 	}
-}
-
-type funcBackoff struct {
-	lastRun *time.Time
-	backOff time.Duration
-	trial   int
 }
