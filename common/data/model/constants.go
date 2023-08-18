@@ -16,5 +16,5 @@ const (
 	PREFERENCES_CHANNEL_COINS = "preferences_channel_coins"
 	WHITELIST                 = "whitelist"
 	TITLES                    = "titles"
-	RAW_NEWS_WEBPAGES         = "raw_news_webpages"
+	RAW_NEWS                  = "raw_news"
 )

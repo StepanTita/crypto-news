@@ -46,7 +46,7 @@ func NewCrawler(cfg config.Config, robotID string) crawler.Crawler {
 	}
 }
 
-func (c BrowseAICrawler) Crawl(ctx context.Context) (any, int, error) {
+func (c BrowseAICrawler) Crawl(ctx context.Context) ([]crawler.ParsedBody, int, error) {
 	taskBody, statusCode, err := c.conn.Post(ctx, connector.RequestParams{
 		Url:  c.url,
 		Path: fmt.Sprintf("/v2/robots/%s/tasks", c.robotID),
@@ -97,7 +97,7 @@ func (c BrowseAICrawler) Crawl(ctx context.Context) (any, int, error) {
 	}
 
 	if statusCode != http.StatusOK {
-		return pollRespBody, statusCode, nil
+		return nil, statusCode, nil
 	}
 
 	if pollRespBody.Result.Status == TaskStatusFailed {

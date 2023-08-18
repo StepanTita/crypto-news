@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/StepanTita/go-EdgeGPT/common"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -48,7 +47,7 @@ func RunEveryWithBackoff(d time.Duration, minBackoff, maxBackoff time.Duration, 
 	backOffs := make([]*funcBackoff, len(fs))
 	for i, f := range fs {
 		if err := tryRunMultiple(5, f); err != nil {
-			x := common.CurrentTimestamp()
+			x := CurrentTimestamp()
 			logrus.WithError(err).Errorf("failed to run function with backoff: %v -> %v", x, i)
 			backOffs[i] = &funcBackoff{lastRun: &x, backOff: minBackoff, trial: 1}
 		} else {

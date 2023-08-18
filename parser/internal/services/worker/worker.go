@@ -69,10 +69,7 @@ func (w worker) work(ctx context.Context, name string) {
 			task.Err = err
 		}
 
-		switch t := body.(type) {
-		case []crawler.ParsedBody:
-			task.Body = t
-		}
+		task.Body = body
 
 		task.StatusCode = code
 		task.handleBy = name

@@ -71,7 +71,7 @@ func (p poster) Post(ctx context.Context) (int, error) {
 }
 
 func (p poster) updateStatusForProcessed(ctx context.Context, processedIDs []uuid.UUID, status string) error {
-	if _, err := p.dataProvider.NewsProvider().ByIDs(processedIDs).ByStatus(model.StatusPending).Update(ctx, model.UpdateNewsParams{
+	if _, err := p.dataProvider.NewsProvider().ByIDs(processedIDs).Update(ctx, model.UpdateNewsParams{
 		Status: convert.ToPtr(status),
 	}); err != nil {
 		return errors.Wrap(err, "failed to update news status")

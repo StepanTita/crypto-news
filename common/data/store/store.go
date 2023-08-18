@@ -9,10 +9,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"common/data/drivers/postgres/raw_news"
+
 	"common/data/drivers/postgres/channels"
 	"common/data/drivers/postgres/news_channels"
 	"common/data/drivers/postgres/preferences_channel_coins"
-	"common/data/drivers/postgres/raw_news_webpages"
 	"common/data/drivers/postgres/titles"
 	"common/data/drivers/postgres/users"
 	"common/data/drivers/postgres/whitelist"
@@ -36,7 +37,7 @@ type DataProvider interface {
 	WhitelistProvider() queriers.WhitelistProvider
 	UsersProvider() queriers.UsersProvider
 	TitlesProvider() queriers.TitlesProvider
-	RawNewsWebpagesProvider() queriers.RawNewsWebpagesProvider
+	RawNewsProvider() queriers.RawNewsProvider
 
 	InTx(ctx context.Context, fn func(dp DataProvider) error) error
 
@@ -80,8 +81,8 @@ func (d dataProvider) TitlesProvider() queriers.TitlesProvider {
 	return titles.New(d.ext(), d.log)
 }
 
-func (d dataProvider) RawNewsWebpagesProvider() queriers.RawNewsWebpagesProvider {
-	return raw_news_webpages.New(d.ext(), d.log)
+func (d dataProvider) RawNewsProvider() queriers.RawNewsProvider {
+	return raw_news.New(d.ext(), d.log)
 }
 
 func (d dataProvider) InTx(ctx context.Context, fn func(dp DataProvider) error) error {

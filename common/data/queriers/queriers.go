@@ -107,15 +107,16 @@ type TitlesProvider interface {
 	Selector[model.Title]
 	Updater[model.UpdateTitleParams, model.Title]
 
-	ByStatus(status string) TitlesProvider
+	ByIDs(ids []uuid.UUID) TitlesProvider
+	ByStatus(status ...string) TitlesProvider
 
 	InsertUniqueBatch(ctx context.Context, entities []model.Title) error
 }
 
-type RawNewsWebpagesProvider interface {
-	Inserter[model.RawNewsWebpage]
-	Selector[model.RawNewsWebpage]
-	Remover[model.RawNewsWebpage]
+type RawNewsProvider interface {
+	Inserter[model.RawNews]
+	Selector[model.RawNews]
+	Remover[model.RawNews]
 }
 
 // No-SQL

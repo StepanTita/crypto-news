@@ -15,6 +15,7 @@ type Title struct {
 	Hash        *string    `db:"hash"`
 	URL         *string    `db:"url"`
 	Status      *string    `db:"status"`
+	Source      *string    `db:"source"`
 	ReleaseDate *time.Time `db:"release_date"`
 }
 

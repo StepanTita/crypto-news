@@ -1,15 +1,19 @@
 package url_crawler
 
 import (
+	"github.com/google/uuid"
+
 	"common/data/model"
 )
 
 type body struct {
-	text string
+	titleID uuid.UUID
+	text    string
 }
 
 func (b body) ToModel() any {
-	return model.RawNewsWebpage{
-		Body: &b.text,
+	return model.RawNews{
+		TitleID: b.titleID,
+		Body:    &b.text,
 	}
 }

@@ -1,12 +1,14 @@
 package url_crawler
 
 import (
+	"bytes"
 	"context"
-	"io"
 	"net/http"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/net/html"
 
 	"common/convert"
 	"common/data/model"
@@ -14,10 +16,6 @@ import (
 	"parser/internal/config"
 	"parser/internal/services/connector"
 	"parser/internal/services/crawler"
-)
-
-const (
-	maxLimit = 100
 )
 
 type UrlCrawler struct {
@@ -28,7 +26,7 @@ type UrlCrawler struct {
 	dataProvider store.DataProvider
 }
 
-func NewCrawler(cfg config.Config) crawler.Crawler {
+func NewCrawler(cfg config.Config) crawler.MultiCrawler[model.Title] {
 	return UrlCrawler{
 		log:          cfg.Logging().WithField("service", "[URL-CRAWLER]"),
 		conn:         connector.New(cfg),
@@ -36,14 +34,48 @@ func NewCrawler(cfg config.Config) crawler.Crawler {
 	}
 }
 
-func (u UrlCrawler) Crawl(ctx context.Context) (any, int, error) {
-	// TODO: process this in batches to reduce RAM load
-	pendingTitles, err := u.dataProvider.TitlesProvider().ByStatus(model.StatusPending).Select(ctx)
-	if err != nil {
-		return nil, 0, errors.Wrap(err, "failed to select pending titles")
+func hasMatchingID(attrs []html.Attribute) bool {
+	for _, attr := range attrs {
+		if attr.Key == "id" && strings.HasPrefix(attr.Val, "article") {
+			return true
+		}
 	}
+	return false
+}
 
-	outBodies := make([]crawler.ParsedBody, 0, 10)
+func extractArticle(doc *html.Node) (*html.Node, error) {
+	var body *html.Node
+	var htmlCrawler func(*html.Node)
+	htmlCrawler = func(node *html.Node) {
+		if node.Type == html.ElementNode && node.Data == "article" && hasMatchingID(node.Attr) {
+			body = node
+			return
+		}
+		for child := node.FirstChild; child != nil; child = child.NextSibling {
+			htmlCrawler(child)
+		}
+	}
+	htmlCrawler(doc)
+	if body != nil {
+		return body, nil
+	}
+	return nil, errors.New("Missing <article> in the node tree")
+}
+
+func collectText(n *html.Node, buf *bytes.Buffer) {
+	if n.Type == html.TextNode {
+		buf.WriteString(n.Data)
+	}
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		collectText(c, buf)
+	}
+}
+
+func (u UrlCrawler) Crawl(ctx context.Context, pendingTitles []model.Title) ([]crawler.ParsedBody, []int, []error) {
+
+	outBodies := make([]crawler.ParsedBody, 0, len(pendingTitles))
+	statusCodes := make([]int, 0, len(pendingTitles))
+	errs := make([]error, 0, len(pendingTitles))
 
 	for _, t := range pendingTitles {
 		respBody, statusCode, err := u.conn.Poll(ctx, connector.PollParams{
@@ -51,20 +83,38 @@ func (u UrlCrawler) Crawl(ctx context.Context) (any, int, error) {
 		})
 
 		if err != nil {
-			return nil, 0, errors.Wrapf(err, "failed to poll url %s", convert.FromPtr(t.URL))
+			errs = append(errs, errors.Wrapf(err, "failed to poll url %s", convert.FromPtr(t.URL)))
+			statusCodes = append(statusCodes, statusCode)
+			continue
 		}
 
 		if statusCode != http.StatusOK {
-			return nil, statusCode, nil
+			errs = append(errs, nil)
+			statusCodes = append(statusCodes, statusCode)
+			continue
 		}
 
-		rawResp, err := io.ReadAll(respBody)
+		rawHtml, err := html.Parse(respBody)
 		if err != nil {
-			return nil, statusCode, errors.Wrap(err, "failed to read response body")
+			errs = append(errs, errors.Wrap(err, "failed to parse response body"))
+			statusCodes = append(statusCodes, statusCode)
+			continue
 		}
 
-		outBodies = append(outBodies, body{text: string(rawResp)})
+		rawArticle, err := extractArticle(rawHtml)
+		if err != nil {
+			errs = append(errs, errors.Wrap(err, "failed to extract article from webpage"))
+			statusCodes = append(statusCodes, statusCode)
+			continue
+		}
+
+		textBuf := bytes.NewBuffer(make([]byte, 0, 1000))
+		collectText(rawArticle, textBuf)
+
+		outBodies = append(outBodies, body{text: textBuf.String(), titleID: t.ID})
+		statusCodes = append(statusCodes, statusCode)
+		errs = append(errs, nil)
 	}
 
-	return outBodies, http.StatusOK, nil
+	return outBodies, statusCodes, errs
 }

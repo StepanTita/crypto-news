@@ -58,6 +58,7 @@ func (b body) ToModel() any {
 		URL:         &b.ReleaseURL,
 		ReleaseDate: processReleaseDate(b.ReleaseDate),
 		Status:      convert.ToPtr(model.StatusPending),
+		Source:      convert.ToPtr("cointelegraph"),
 	}
 }
 

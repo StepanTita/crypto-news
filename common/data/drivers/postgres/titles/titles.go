@@ -4,6 +4,7 @@ import (
 	"context"
 
 	sq "github.com/Masterminds/squirrel"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -41,9 +42,19 @@ func New(ext sqlx.ExtContext, log *logrus.Entry) queriers.TitlesProvider {
 	}
 }
 
-func (t titles) ByStatus(status string) queriers.TitlesProvider {
+func (t titles) ByStatus(status ...string) queriers.TitlesProvider {
 	t.expr = sq.And{t.expr, sq.Eq{"titles.status": status}}
 	return t
+}
+
+func (t titles) ByIDs(ids []uuid.UUID) queriers.TitlesProvider {
+	t.expr = sq.And{t.expr, sq.Eq{"titles.id": ids}}
+	return t
+}
+
+func (t titles) Select(ctx context.Context) ([]model.Title, error) {
+	t.Selector = t.Selector.WithExpr(t.expr)
+	return t.Selector.Select(ctx)
 }
 
 func (t titles) InsertUniqueBatch(ctx context.Context, entities []model.Title) error {
@@ -72,8 +83,8 @@ func (t titles) InsertUniqueBatch(ctx context.Context, entities []model.Title) e
 }
 
 func (t titles) Update(ctx context.Context, title model.UpdateTitleParams) ([]model.Title, error) {
-	title.UpdatedAt = convert.ToPtr(common.CurrentTimestamp())
-
 	t.Updater = t.Updater.WithExpr(t.expr)
+
+	title.UpdatedAt = convert.ToPtr(common.CurrentTimestamp())
 	return t.Updater.Update(ctx, title)
 }
