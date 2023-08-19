@@ -7,7 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 
-	"common"
+	"common/data"
 	"common/data/drivers/postgres"
 	"common/data/model"
 	"common/data/queriers"
@@ -35,7 +35,7 @@ func New(ext sqlx.ExtContext, log *logrus.Entry) queriers.PreferencesChannelCoin
 		Selector: postgres.NewSelector[model.PreferencesChannelCoin](ext, log, preferencesChannelCoinsColumns),
 		Remover:  postgres.NewRemover[model.PreferencesChannelCoin](ext, log),
 
-		expr: common.BasicSqlizer,
+		expr: data.BasicSqlizer,
 	}
 }
 

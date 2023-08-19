@@ -11,7 +11,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	commonutils "common"
 	"common/convert"
 	"common/data"
 	"common/data/model"
@@ -173,7 +172,7 @@ func (p poster) buildMessage(channelID int64, news model.News, coins []model.Coi
 		coinsHashTags.WriteString(fmt.Sprintf("#%s ", coin.Code))
 	}
 
-	rawTemplate := p.cfg.Template(commonutils.NewsPost)
+	rawTemplate := p.cfg.Template(data.NewsPost)
 
 	msg.Text = transform.CleanUnsupportedHTML(fmt.Sprintf(locale.PrepareTemplate(p.cfg, rawTemplate, convert.FromPtr(news.Locale)),
 		escapeKeepingHTML(convert.FromPtr(news.Media.Title)),

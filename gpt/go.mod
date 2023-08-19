@@ -3,22 +3,21 @@ module gpt
 go 1.20
 
 require (
-	github.com/StepanTita/go-EdgeGPT v0.0.1-release.0.20230701021737-9d86dde1ca7c
 	github.com/google/uuid v1.3.0
 	github.com/pkg/errors v0.9.1
+	github.com/sashabaranov/go-openai v1.14.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/urfave/cli/v2 v2.25.5
-	golang.org/x/text v0.9.0
+	golang.org/x/text v0.12.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/StepanTita/go-BingDALLE v0.0.1-alpha1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
-	github.com/gobwas/httphead v0.1.0 // indirect
-	github.com/gobwas/pool v0.2.1 // indirect
-	github.com/gobwas/ws v1.2.0 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/stretchr/testify v1.8.0 // indirect
 	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
-	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
+	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )

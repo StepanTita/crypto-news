@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"common"
+	"common/data"
 	"common/data/drivers/postgres"
 	"common/data/model"
 	"common/data/queriers"
@@ -32,7 +32,7 @@ func New(ext sqlx.ExtContext, log *logrus.Entry) queriers.CoinsProvider {
 
 		Selector: postgres.NewSelector[model.Coin](ext, log, coinsColumns),
 
-		expr: common.BasicSqlizer,
+		expr: data.BasicSqlizer,
 	}
 }
 

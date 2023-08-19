@@ -117,6 +117,13 @@ type RawNewsProvider interface {
 	Inserter[model.RawNews]
 	Selector[model.RawNews]
 	Remover[model.RawNews]
+
+	ByIDs(ids []uuid.UUID) RawNewsProvider
+
+	Limit(l uint64) RawNewsProvider
+	Offset(o uint64) RawNewsProvider
+	Order(by, order string) RawNewsProvider
+	Count(ctx context.Context) (uint64, error)
 }
 
 // No-SQL

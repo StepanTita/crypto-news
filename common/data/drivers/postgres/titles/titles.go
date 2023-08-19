@@ -11,6 +11,7 @@ import (
 
 	"common"
 	"common/convert"
+	"common/data"
 	"common/data/drivers/postgres"
 	"common/data/model"
 	"common/data/queriers"
@@ -38,7 +39,7 @@ func New(ext sqlx.ExtContext, log *logrus.Entry) queriers.TitlesProvider {
 		Selector: postgres.NewSelector[model.Title](ext, log, titlesColumns),
 		Updater:  postgres.NewUpdater[model.UpdateTitleParams, model.Title](ext, log),
 
-		expr: common.BasicSqlizer,
+		expr: data.BasicSqlizer,
 	}
 }
 

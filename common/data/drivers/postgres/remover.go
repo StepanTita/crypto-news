@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"common"
 	"common/data"
 	"common/data/model"
 	"common/data/queriers"
@@ -39,7 +38,7 @@ func NewRemover[T model.Model](ext sqlx.ExtContext, log *logrus.Entry) Remover[T
 		log: log.WithField("service", "[remover]"),
 		ext: ext,
 
-		expr: common.BasicSqlizer,
+		expr: data.BasicSqlizer,
 		sql:  sq.Delete(entity.TableName()),
 	}
 }

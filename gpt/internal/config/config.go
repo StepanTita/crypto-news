@@ -30,6 +30,8 @@ type yamlConfig struct {
 	GPTConfig struct {
 		AuthToken     string        `yaml:"auth_token"`
 		GenerateEvery time.Duration `yaml:"generate_every"`
+		QueryContext  string        `yaml:"query_context"`
+		Prompt        string        `yaml:"prompt"`
 		ImagesPrompt  string        `yaml:"images_prompt"`
 	} `yaml:"gpt"`
 }
@@ -50,6 +52,6 @@ func NewFromFile(path string) Config {
 	return &config{
 		Config:    commoncfg.New(cfg.LogLevel, cfg.Runtime, cfg.Database, cfg.KVStore),
 		BotConfig: NewBotConfig(cfg.GPTConfig.AuthToken),
-		Generator: NewGenerator(cfg.GPTConfig.GenerateEvery, cfg.GPTConfig.ImagesPrompt),
+		Generator: NewGenerator(cfg.GPTConfig.GenerateEvery, cfg.GPTConfig.ImagesPrompt, cfg.GPTConfig.QueryContext),
 	}
 }

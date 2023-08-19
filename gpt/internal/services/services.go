@@ -1,13 +1,14 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
+	"strconv"
 	"time"
 
-	chat_bot "github.com/StepanTita/go-EdgeGPT/chat-bot"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/text/language"
@@ -18,7 +19,14 @@ import (
 	"common/data"
 	"common/data/model"
 	"common/data/store"
+	"common/iteration"
+	"common/math"
+	"gpt/internal/bot"
 	"gpt/internal/config"
+)
+
+const (
+	processingLimit = 10
 )
 
 type Service interface {
@@ -43,48 +51,65 @@ func New(cfg config.Config) Service {
 
 func (s service) Run(ctx context.Context) error {
 	s.log.Info("Staring gpt generator bot service...")
-	bot := chat_bot.New(s.cfg.GPTConfig())
+	summarizationBot := bot.NewOpenAI(s.cfg)
 
 	common.RunEveryWithBackoff(s.cfg.GenerateEvery(), 15*time.Second, 15*time.Minute, func() error {
 		s.log.Debug("Generating digest...")
 
-		for _, locale := range s.cfg.Locales() {
-			err := bot.Init(ctx)
+		totalRows, err := s.dataProvider.RawNewsProvider().Count(ctx)
+		if err != nil {
+			return errors.Wrap(err, "failed to count raw news")
+		}
+
+		for i := 0; i < int(totalRows)/processingLimit+1; i++ {
+			rawNews, err := s.dataProvider.RawNewsProvider().Order("id", data.OrderAsc).Limit(processingLimit).Offset(uint64(i * processingLimit)).Select(ctx)
 			if err != nil {
-				return errors.Wrap(err, "failed to initialize bot")
+				if !errors.Is(err, data.ErrNotFound) {
+					return errors.Wrap(err, "failed to count raw news")
+				}
+				s.log.Debug("Done processing pending raw news")
+				return nil
 			}
 
-			s.log.WithField("locale", locale).Debug("Generating for locale")
+			titleIDs := iteration.Map(rawNews, func(t model.RawNews) uuid.UUID {
+				return t.TitleID
+			})
 
-			timestamp := common.CurrentTimestamp()
+			titles, err := s.dataProvider.TitlesProvider().ByIDs(titleIDs).Select(ctx)
 
-			news, digestResponse, err := s.generateForLocale(ctx, bot, locale, timestamp)
-			if err != nil {
-				return errors.Wrapf(err, "failed to generate for locale: %s", locale)
+			aggregatedTextBuf := bytes.NewBuffer(make([]byte, 0, 1000))
+
+			for _, rawNewsPiece := range rawNews {
+				aggregatedTextBuf.WriteString(convert.FromPtr(rawNewsPiece.Body))
 			}
 
-			summaryHistory, currentSummary, err := s.readShortSummary(ctx, bot, locale)
-			if err != nil {
-				return errors.Wrap(err, "failed to read short summary")
-			}
+			for _, locale := range s.cfg.Locales() {
+				s.log.WithField("locale", locale).Debug("Generating for locale")
 
-			_, err = s.dataProvider.KVProvider().SetValue(ctx, fmt.Sprintf(keyPrevDigest, locale), summaryHistory, 6*time.Hour)
-			if err != nil {
-				return errors.Wrap(err, "failed to set previous digest to kv-store")
-			}
+				timestamp := common.CurrentTimestamp()
 
-			// for now generate images only 4 times a day
-			if locale == language.English.String() && timestamp.Hour()%8 == 0 {
-				resources, err := s.generateImages(ctx, bot, currentSummary)
+				news, digestResponse, err := s.generateDigestForLocale(
+					ctx,
+					summarizationBot,
+					s.cfg.QueryContext(), aggregatedTextBuf.String(), locale,
+					titles,
+					timestamp,
+				)
 				if err != nil {
-					return errors.Wrapf(err, "failed to generate images from summary: %s", currentSummary)
+					return errors.Wrapf(err, "failed to generate for locale: %s", locale)
 				}
 
-				digestResponse.resources = resources
+				if err := s.addNews(ctx, news, digestResponse); err != nil {
+					return errors.Wrap(err, "failed to add news")
+				}
 			}
 
-			if err := s.addNews(ctx, news, digestResponse); err != nil {
-				return errors.Wrap(err, "failed to add news")
+			rawNewsIDs := iteration.Map(rawNews, func(t model.RawNews) uuid.UUID {
+				return t.ID
+			})
+
+			if err := s.dataProvider.RawNewsProvider().ByIDs(rawNewsIDs).Remove(ctx, model.RawNews{}); err != nil {
+				return errors.Wrap(err, "failed to remove processed raw news")
 			}
 		}
 
@@ -96,139 +121,49 @@ func (s service) Run(ctx context.Context) error {
 	return nil
 }
 
-func (s service) readShortSummary(ctx context.Context, bot chat_bot.ChatBot, locale string) (string, string, error) {
-	deadlineCtx, cancel := context.WithDeadline(ctx, time.Now().Add(10*time.Minute))
-	defer cancel()
-
-	lang := display.English.Tags().Name(language.Make(locale))
-	parsedResponsesChan, err := bot.Ask(deadlineCtx, s.cfg.ShortSummaryPrompt(), "{{language}}", s.cfg.GPTConfig().Style(), false, lang)
-	if err != nil {
-		return "", "", errors.Wrap(err, "failed to ask bot")
-	}
-
-	response, err := s.readResponses(deadlineCtx, parsedResponsesChan)
-	if err != nil {
-		return "", "", errors.Wrap(err, "failed to generate short summary")
-	}
-
-	prevDigest, err := s.dataProvider.KVProvider().Get(ctx, fmt.Sprintf(keyPrevDigest, locale))
-	if err != nil {
-		if !errors.Is(err, data.ErrNotFound) {
-			return "", "", errors.Wrap(err, "failed to get previous digest from kv-store")
-		}
-	}
-	prevDigest = fmt.Sprintf("%s\n%s", prevDigest, strings.ReplaceAll(response.content, "\n", ""))
-
-	// TODO might need to estimate on some language that is longer than english
-	prompt := fmt.Sprintf("%s\nTry to avoid information from your previous summary:", s.cfg.GPTConfig().InitialPrompt())
-	promptLen := bot.EstimatePrompt(prompt, s.cfg.GPTConfig().Context(), lang)
-	residualLen := maxInputChars - promptLen
-	for len(prevDigest) > residualLen {
-		prevDigest = prevDigest[len(prevDigest)-residualLen:]
-	}
-
-	return prevDigest, response.content, nil
-}
-
-func (s service) readResponses(ctx context.Context, responsesChan <-chan chat_bot.ParsedFrame) (*generationsResponse, error) {
-	response := &generationsResponse{}
-	for msg := range responsesChan {
-		if msg.ErrBody != nil {
-			s.log.WithField("reason", msg.ErrBody.Reason).Error(msg.ErrBody.Message)
-			return nil, errors.New(msg.ErrBody.Message)
-		}
-
-		if msg.Skip {
-			continue
-		}
-
-		response.content = fmt.Sprintf("%s\n\n%s", msg.Text, strings.TrimPrefix(msg.AdaptiveCards, "\n"))
-		response.sources = msg.Sources
-		response.resources = msg.Resources
-	}
-
-	if ctx.Err() != nil {
-		return nil, errors.New("failed to ask bot due to cancelled context")
-	}
-
-	coinsSet := make(map[string]bool)
-	for _, match := range coinsRegex.FindAllStringSubmatch(response.content, -1) {
-		for _, coin := range strings.Split(match[1], ",") {
-			coinsSet[strings.TrimSpace(coin)] = true
-		}
-	}
-
-	for k := range coinsSet {
-		response.coins = append(response.coins, k)
-	}
-
-	response.content = coinsRegex.ReplaceAllString(response.content, "")
-	return response, nil
-}
-
-func (s service) generateForLocale(ctx context.Context, bot chat_bot.ChatBot, locale string, timestamp time.Time) (*model.News, *generationsResponse, error) {
-	var prevDigest string
-	var err error
-	prevDigest, err = s.dataProvider.KVProvider().Get(ctx, keyPrevDigest)
-	if err != nil {
-		if !errors.Is(err, data.ErrNotFound) {
-			s.log.WithError(err).Warn("failed to get previous digest from kv-store")
-		}
-	}
-
+func (s service) generateDigestForLocale(ctx context.Context,
+	bot bot.Bot,
+	queryContext, aggregatedText, locale string,
+	titles []model.Title,
+	timestamp time.Time) (*model.News, []model.Coin, error) {
 	// we shouldn't create single post longer than 10 minutes, if that happens - probably something went wrong
 	deadlineCtx, cancel := context.WithDeadline(ctx, time.Now().Add(10*time.Minute))
 	defer cancel()
 
-	prompt := s.cfg.GPTConfig().InitialPrompt()
-	if prevDigest != "" {
-		prompt = fmt.Sprintf("%s\nTry to avoid information from your previous summary:%s", s.cfg.GPTConfig().InitialPrompt(), prevDigest)
-	}
-
 	lang := display.English.Tags().Name(language.Make(locale))
-	parsedResponsesChan, err := bot.Ask(deadlineCtx, s.cfg.GPTConfig().Context(), prompt, s.cfg.GPTConfig().Style(), true, lang)
+
+	replyMsg, err := bot.Ask(deadlineCtx, aggregatedText[:math.Min(len(aggregatedText), maxInputChars)], queryContext, lang)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "failed to ask bot")
 	}
 
-	digestResponse, err := s.readResponses(deadlineCtx, parsedResponsesChan)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to generate digest")
-	}
+	content, coins := parseCoins(replyMsg.Text)
 
-	resourcesList := make([]model.NewsMediaResource, 0, len(digestResponse.sources)+len(digestResponse.resources))
-	for _, link := range digestResponse.sources {
+	resourcesList := make([]model.NewsMediaResource, 0, len(titles))
+	for i, title := range titles {
 		metaLinks := model.MetaLinksData{
-			ID:    link.ID,
-			URL:   link.URL,
-			Title: link.Title,
+			ID:    strconv.Itoa(i),
+			URL:   convert.FromPtr(title.URL),
+			Title: convert.FromPtr(title.Title),
 		}
 
 		metaLinksBody, err := json.Marshal(metaLinks)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "failed to marshal meta sources body")
 		}
+
 		resourcesList = append(resourcesList, model.NewsMediaResource{
 			Type: convert.ToPtr(model.ResourceTypeSource),
-			URL:  convert.ToPtr(link.URL),
+			URL:  title.URL,
 			Meta: metaLinksBody,
 		})
-	}
-
-	for _, link := range digestResponse.resources {
-		if link.Type == chat_bot.ContentTypeImage {
-			resourcesList = append(resourcesList, model.NewsMediaResource{
-				Type: convert.ToPtr(model.ResourceTypeImage),
-				URL:  convert.ToPtr(link.URL),
-			})
-		}
 	}
 
 	news := &model.News{
 		Locale: convert.ToPtr(locale),
 		Media: &model.NewsMedia{
 			Title:     convert.ToPtr(fmt.Sprintf("Digest hour: %d, Day: %d", timestamp.Hour(), timestamp.Day())),
-			Text:      convert.ToPtr(digestResponse.content),
+			Text:      convert.ToPtr(content),
 			Resources: resourcesList,
 		},
 		Source: convert.ToPtr("gpt-bing"),
@@ -239,26 +174,18 @@ func (s service) generateForLocale(ctx context.Context, bot chat_bot.ChatBot, lo
 		"digest-hour": timestamp.Hour(),
 		"digest-day":  timestamp.Day(),
 	}).Debug("Finished generating")
-	return news, digestResponse, nil
+
+	return news, coins, nil
 }
 
-func (s service) addNews(ctx context.Context, news *model.News, digestResponse *generationsResponse) error {
-	for _, link := range digestResponse.resources {
-		if link.Type == chat_bot.ContentTypeImage {
-			news.Media.Resources = append(news.Media.Resources, model.NewsMediaResource{
-				Type: convert.ToPtr(model.ResourceTypeImage),
-				URL:  convert.ToPtr(link.URL),
-			})
-		}
-	}
-
+func (s service) addNews(ctx context.Context, news *model.News, coins []model.Coin) error {
 	createdNews, err := s.dataProvider.NewsProvider().Insert(ctx, convert.FromPtr(news))
 	if err != nil {
 		return errors.Wrap(err, "failed to insert news digest")
 	}
 
-	coinsBatch, newsCoinsBatch := createCoinsNewsCoinsBatch(createdNews.ID, digestResponse.coins)
-	if err = s.dataProvider.CoinsProvider().UpsertCoinsBatch(ctx, coinsBatch); err != nil {
+	newsCoinsBatch := createCoinsNewsCoinsBatch(createdNews.ID, coins)
+	if err = s.dataProvider.CoinsProvider().UpsertCoinsBatch(ctx, coins); err != nil {
 		return errors.Wrap(err, "failed to insert batch of coins")
 	}
 
@@ -279,21 +206,4 @@ func (s service) addNews(ctx context.Context, news *model.News, digestResponse *
 	}
 
 	return nil
-}
-
-func (s service) generateImages(ctx context.Context, bot chat_bot.ChatBot, shortSummary string) ([]chat_bot.ResourceLink, error) {
-	deadlineCtx, cancel := context.WithDeadline(ctx, time.Now().Add(10*time.Minute))
-	defer cancel()
-
-	parsedResponsesChan, err := bot.Ask(deadlineCtx, s.cfg.ImagesPrompt(), shortSummary, s.cfg.GPTConfig().Style(), false, "")
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to ask bot")
-	}
-
-	imagesResponse, err := s.readResponses(deadlineCtx, parsedResponsesChan)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to generate images")
-	}
-
-	return imagesResponse.resources, nil
 }

@@ -13,8 +13,7 @@ import (
 	"golang.org/x/exp/constraints"
 	"golang.org/x/oauth2"
 
-	commonutils "common"
-	config2 "common/config"
+	commoncfg "common/config"
 
 	"common/convert"
 	"common/data"
@@ -33,7 +32,7 @@ type Client interface {
 
 type twitterClient struct {
 	log       *logrus.Entry
-	templator config2.Templator
+	templator commoncfg.Templator
 
 	oauthConfig *oauth2.Config
 
@@ -64,7 +63,7 @@ func (t *twitterClient) PostTweet(ctx context.Context, news model.News) error {
 
 	tweet := Tweet{
 		// TODO: fix temporary workaround till we fix the markdown issue in twitter
-		Text: fmt.Sprintf(t.templator.Template(fmt.Sprintf("%s_%s", commonutils.NewsPost, "twitter")),
+		Text: fmt.Sprintf(t.templator.Template(fmt.Sprintf("%s_%s", data.NewsPost, "twitter")),
 			convert.FromPtr(news.Media.Title),
 			convert.FromPtr(news.Media.Text),
 			convert.FromPtr(news.Source)),
