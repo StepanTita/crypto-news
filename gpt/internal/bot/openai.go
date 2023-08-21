@@ -32,7 +32,7 @@ func (b *openAIBot) Ask(ctx context.Context, prompt, context string, language st
 	resp, err := b.client.CreateChatCompletion(
 		ctx,
 		openai.ChatCompletionRequest{
-			Model: openai.GPT4,
+			Model: openai.GPT3Dot5Turbo16K,
 			Messages: []openai.ChatCompletionMessage{
 				{
 					Role:    openai.ChatMessageRoleSystem,

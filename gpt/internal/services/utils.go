@@ -9,7 +9,7 @@ import (
 	"common/data/model"
 )
 
-const maxInputChars = 16_000
+const maxInputChars = 50_000
 
 var coinsRegex = regexp.MustCompile(`\<coins\>\[([A-Z1-9\,\s]+)\]\<\/coins\>`)
 
