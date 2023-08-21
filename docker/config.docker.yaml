@@ -32,6 +32,7 @@ twitter:
   api_key: ...
   api_secret: ...
 gpt:
-  generate_every: 1m
-  log_level: debug
-  prompt: "Create a summary with at least 5 the most important news related to cryptocurrencies of the last hour (the more - the better)."
+  auth_token: ...
+  generate_every: 5m
+  query_context: "Some context for each request"
+  images_prompt: ""

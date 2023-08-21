@@ -97,7 +97,7 @@ func (s *service) Run(ctx context.Context) error {
 		return
 	}()
 
-	return common.RunEvery(s.cfg.CrawlEvery()+15*time.Second, func() error {
+	return common.RunEvery(s.cfg.CrawlEvery()+10*time.Minute, func() error {
 		// TODO: process this in batches to reduce RAM load
 		pendingTitles, err := s.dataProvider.TitlesProvider().ByStatus(model.StatusPending, model.StatusFailed).Select(ctx)
 		if err != nil {

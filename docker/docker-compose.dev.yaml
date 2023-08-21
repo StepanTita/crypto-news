@@ -14,22 +14,22 @@ services:
     restart: on-failure
     entrypoint: /bin/sh
     command: -c "migrator migrate up"
-#  parser:
-#    image: stepancons/crypto-news-parser:dev
-#    container_name: parser-dev
-#    networks:
-#      - dev
-#    volumes:
-#      - type: bind
-#        source: ./config.docker.dev.yaml
-#        target: /config.yaml
-#    environment:
-#      CONFIG: /config.yaml
-#    depends_on:
-#      - migrator
-#    restart: always
-#    entrypoint: /bin/sh
-#    command: -c "parser run"
+  parser:
+    image: stepancons/crypto-news-parser:dev
+    container_name: parser-dev
+    networks:
+      - dev
+    volumes:
+      - type: bind
+        source: ./config.docker.dev.yaml
+        target: /config.yaml
+    environment:
+      CONFIG: /config.yaml
+    depends_on:
+      - migrator
+    restart: always
+    entrypoint: /bin/sh
+    command: -c "parser run"
   gpt:
     image: stepancons/crypto-news-gpt:dev
     container_name: gpt-dev
