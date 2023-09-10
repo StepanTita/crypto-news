@@ -38,7 +38,7 @@ type rawBody struct {
 		FinishedAt        *int64  `json:"finishedAt"`
 		UserFriendlyError *string `json:"userFriendlyError"`
 		CapturedLists     *struct {
-			Releases []body `json:"coin_telegraph_press_releases"`
+			Releases []body `json:"coin_telegraph_posts"`
 		} `json:"capturedLists"`
 	} `json:"result"`
 }
@@ -47,14 +47,12 @@ type body struct {
 	ReleaseDate  string `json:"release_date"`
 	ReleaseURL   string `json:"release_url"`
 	ReleaseTitle string `json:"release_title"`
-	ReleaseDesc  string `json:"release_desc"`
 }
 
 func (b body) ToModel() any {
 	return model.Title{
 		Title:       &b.ReleaseTitle,
-		Summary:     &b.ReleaseDesc,
-		Hash:        convert.ToPtr(hash.Hash(b.ReleaseTitle, b.ReleaseDesc)),
+		Hash:        convert.ToPtr(hash.Hash(b.ReleaseTitle, b.ReleaseURL)),
 		URL:         &b.ReleaseURL,
 		ReleaseDate: processReleaseDate(b.ReleaseDate),
 		Status:      convert.ToPtr(model.StatusPending),

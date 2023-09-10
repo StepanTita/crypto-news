@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/pkg/errors"
@@ -65,6 +66,11 @@ func (c BrowseAICrawler) Crawl(ctx context.Context) ([]crawler.ParsedBody, int, 
 		return nil, statusCode, errors.Wrap(err, "failed to decode create task response body")
 	}
 
+	// TODO: temporary workaround to make sure we only parse /news
+	taskRespBody.Result.CapturedLists.Releases = iteration.Filter(taskRespBody.Result.CapturedLists.Releases, func(b body) bool {
+		return strings.HasPrefix(b.ReleaseURL, "https://cointelegraph.com/news/")
+	})
+
 	if statusCode != http.StatusOK {
 		return nil, statusCode, nil
 	}
@@ -79,7 +85,7 @@ func (c BrowseAICrawler) Crawl(ctx context.Context) ([]crawler.ParsedBody, int, 
 				"Authorization": []string{fmt.Sprintf("Bearer %s", c.authToken)},
 			},
 			Params: url.Values{
-				"cointelegraph_press_releases_limit": []string{"10"},
+				"coin_telegraph_posts_limit": []string{"10"},
 			},
 		})
 
