@@ -66,11 +66,6 @@ func (c BrowseAICrawler) Crawl(ctx context.Context) ([]crawler.ParsedBody, int, 
 		return nil, statusCode, errors.Wrap(err, "failed to decode create task response body")
 	}
 
-	// TODO: temporary workaround to make sure we only parse /news
-	taskRespBody.Result.CapturedLists.Releases = iteration.Filter(taskRespBody.Result.CapturedLists.Releases, func(b body) bool {
-		return strings.HasPrefix(b.ReleaseURL, "https://cointelegraph.com/news/")
-	})
-
 	if statusCode != http.StatusOK {
 		return nil, statusCode, nil
 	}
@@ -101,6 +96,11 @@ func (c BrowseAICrawler) Crawl(ctx context.Context) ([]crawler.ParsedBody, int, 
 			time.Sleep(15 * time.Second)
 		}
 	}
+
+	// TODO: temporary workaround to make sure we only parse /news
+	pollRespBody.Result.CapturedLists.Releases = iteration.Filter(pollRespBody.Result.CapturedLists.Releases, func(b body) bool {
+		return strings.HasPrefix(b.ReleaseURL, "https://cointelegraph.com/news/")
+	})
 
 	if statusCode != http.StatusOK {
 		return nil, statusCode, nil
