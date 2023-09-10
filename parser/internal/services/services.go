@@ -54,7 +54,7 @@ func NewService(cfg config.Config) Service {
 func (s *service) Run(ctx context.Context) error {
 	s.log.Infof("Staring crawling every %v...", s.cfg.CrawlEvery())
 	go func() {
-		err := common.RunEvery(s.cfg.CrawlEvery(), func() error {
+		common.RunEveryWithBackoff(s.cfg.CrawlEvery(), 15*time.Second, 15*time.Minute, func() error {
 			s.log.Debugf("Crawling %d...", len(s.titlesCrawlers))
 
 			wrk := worker.New(workersNum, s.cfg)
@@ -89,15 +89,9 @@ func (s *service) Run(ctx context.Context) error {
 			}
 			return nil
 		})
-
-		if err != nil {
-			s.log.WithError(err).Error("failed to run titles crawlers")
-		}
-
-		return
 	}()
 
-	return common.RunEvery(s.cfg.CrawlEvery()+10*time.Minute, func() error {
+	return common.RunEvery(s.cfg.CrawlEvery()/4, func() error {
 		// TODO: process this in batches to reduce RAM load
 		pendingTitles, err := s.dataProvider.TitlesProvider().ByStatus(model.StatusPending, model.StatusFailed).Select(ctx)
 		if err != nil {
