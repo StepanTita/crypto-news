@@ -129,7 +129,7 @@ func (s *service) Run(ctx context.Context) error {
 			if err != nil {
 				s.log.WithFields(logrus.Fields{
 					"title-id":  pendingTitles[i].ID,
-					"title-url": pendingTitles[i].URL,
+					"title-url": convert.FromPtr(pendingTitles[i].URL),
 					"info":      body,
 				}).WithError(err).Error("failed to run request...")
 
