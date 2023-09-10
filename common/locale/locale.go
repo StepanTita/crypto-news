@@ -32,9 +32,12 @@ func PrepareTemplate(localizer config.Localizer, t, locale string) string {
 	for _, match := range reLocale.FindAllStringSubmatch(t, -1) {
 		modifiers := match[2]
 		entity := localizer.Localize(match[3], locale)
-		modOps := preprocessingOps(strings.Split(modifiers, ","), language.Make(locale))
-		for _, op := range modOps {
-			entity = op(entity)
+
+		if modifiers != "" {
+			modOps := preprocessingOps(strings.Split(modifiers, ","), language.Make(locale))
+			for _, op := range modOps {
+				entity = op(entity)
+			}
 		}
 		t = strings.ReplaceAll(t, match[0], entity)
 	}

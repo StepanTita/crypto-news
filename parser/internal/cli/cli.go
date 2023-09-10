@@ -2,6 +2,7 @@ package cli
 
 import (
 	"os"
+	"runtime/debug"
 
 	"github.com/urfave/cli/v2"
 
@@ -17,7 +18,7 @@ func Run(args []string) bool {
 
 	defer func() {
 		if rvr := recover(); rvr != nil {
-			log.Error("internal panicked: ", rvr)
+			log.Error("internal panicked: ", rvr, string(debug.Stack()))
 		}
 	}()
 
