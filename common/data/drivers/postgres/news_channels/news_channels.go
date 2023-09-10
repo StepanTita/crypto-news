@@ -8,7 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
 
-	"common"
+	"common/data"
 	"common/data/drivers/postgres"
 	"common/data/model"
 	"common/data/queriers"
@@ -36,12 +36,12 @@ func New(ext sqlx.ExtContext, log *logrus.Entry) queriers.NewsChannelsProvider {
 		Selector: postgres.NewSelector[model.NewsChannel](ext, log, newsChannelColumns),
 		Remover:  postgres.NewRemover[model.NewsChannel](ext, log),
 
-		expr: common.BasicSqlizer,
+		expr: data.BasicSqlizer,
 	}
 }
 
 func (n newsChannels) Ordered() queriers.NewsChannelsProvider {
-	n.Selector = n.Order("news_channels.priority", common.OrderAsc)
+	n.Selector = n.Order("news_channels.priority", data.OrderAsc)
 	return n
 }
 

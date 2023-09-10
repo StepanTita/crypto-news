@@ -1,4 +1,5 @@
 .idea
-dbconfig.yaml
+dbconfig.yml
 config.*.yaml
+!config.docker.yaml
 *.iml

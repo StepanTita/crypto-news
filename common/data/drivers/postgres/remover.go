@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"common"
+	"common/data"
 	"common/data/model"
 	"common/data/queriers"
 )
@@ -38,11 +38,12 @@ func NewRemover[T model.Model](ext sqlx.ExtContext, log *logrus.Entry) Remover[T
 		log: log.WithField("service", "[remover]"),
 		ext: ext,
 
-		expr: common.BasicSqlizer,
+		expr: data.BasicSqlizer,
 		sql:  sq.Delete(entity.TableName()),
 	}
 }
 
+// TODO: remove by fields that are set on entity
 func (r remover[T]) Remove(ctx context.Context, entity T) error {
 	r.log.Debug(sq.DebugSqlizer(r.sql.Where(r.expr)))
 
@@ -60,6 +61,11 @@ func (r remover[T]) Remove(ctx context.Context, entity T) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to count affected rows")
 	}
+
+	if n == 0 {
+		return data.ErrNotFound
+	}
+
 	r.log.WithField("rows", n).Debug("removed rows")
 	return nil
 }

@@ -14,22 +14,22 @@ services:
     restart: on-failure
     entrypoint: /bin/sh
     command: -c "migrator migrate up"
-  #  parser:
-  #    image: stepancons/crypto-news-parser:prod
-  #    container_name: parser-prod
-  #    networks:
-  #      - prod
-  #    volumes:
-  #      - type: bind
-  #        source: ./config.docker.prod.yaml
-  #        target: /config.yaml
-  #    environment:
-  #      CONFIG: /config.yaml
-  #    depends_on:
-  #      - migrator
-  #    restart: always
-  #    entrypoint: /bin/sh
-  #    command: -c "parser run"
+  parser:
+    image: stepancons/crypto-news-parser:prod
+    container_name: parser-prod
+    networks:
+      - prod
+    volumes:
+      - type: bind
+        source: ./config.docker.prod.yaml
+        target: /config.yaml
+    environment:
+      CONFIG: /config.yaml
+    depends_on:
+      - migrator
+    restart: always
+    entrypoint: /bin/sh
+    command: -c "parser run"
   gpt:
     image: stepancons/crypto-news-gpt:prod
     container_name: gpt-prod
@@ -62,6 +62,22 @@ services:
     restart: always
     entrypoint: /bin/sh
     command: -c "telegram-bot run"
+  configuration-bot:
+    image: stepancons/crypto-news-configuration-bot:prod
+    container_name: configuration-bot-prod
+    networks:
+      - prod
+    volumes:
+      - type: bind
+        source: ./config.docker.prod.yaml
+        target: /config.yaml
+    environment:
+      CONFIG: /config.yaml
+    depends_on:
+      - migrator
+    restart: always
+    entrypoint: /bin/sh
+    command: -c "configuration-bot run"
   #  twitter-bot:
   #    image: stepancons/crypto-news-twitter-bot:latest
   #    container_name: twitter-bot-prod

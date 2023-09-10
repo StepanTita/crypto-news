@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -13,6 +14,7 @@ type Task struct {
 	Body       []crawler.ParsedBody
 	Err        error
 	StatusCode int
+	StatusBody map[string]json.RawMessage
 	duration   time.Duration
 	handleBy   string // worker name
 }

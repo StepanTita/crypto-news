@@ -7,11 +7,15 @@ import (
 )
 
 type ParsedBody interface {
-	ToNews() model.News
+	ToModel() any
 }
 
 type Crawler interface {
 	Crawl(ctx context.Context) ([]ParsedBody, int, error)
+}
+
+type MultiCrawler[T model.Model] interface {
+	Crawl(ctx context.Context, entities []T) ([]ParsedBody, []int, []error)
 }
 
 type CrawlFunc func(ctx context.Context) ([]ParsedBody, int, error)

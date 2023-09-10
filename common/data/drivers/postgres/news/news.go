@@ -9,6 +9,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"common"
+	"common/convert"
+	"common/data"
 	"common/data/drivers/postgres"
 	"common/data/model"
 	"common/data/queriers"
@@ -38,7 +40,7 @@ func New(ext sqlx.ExtContext, log *logrus.Entry) queriers.NewsProvider {
 		Selector: postgres.NewSelector[model.News](ext, log, newsColumns),
 		Updater:  postgres.NewUpdater[model.UpdateNewsParams, model.News](ext, log),
 
-		expr: common.BasicSqlizer,
+		expr: data.BasicSqlizer,
 	}
 }
 
@@ -64,7 +66,7 @@ func (n news) ByCoins(codes []string) queriers.NewsProvider {
 }
 
 func (n news) GetLatest(ctx context.Context) (*model.News, error) {
-	n.Getter = n.Getter.Order("news.published_at", common.OrderDesc)
+	n.Getter = n.Getter.Order("news.published_at", data.OrderDesc)
 	return n.Get(ctx)
 }
 
@@ -74,5 +76,13 @@ func (n news) Get(ctx context.Context) (*model.News, error) {
 }
 
 func (n news) Select(ctx context.Context) ([]model.News, error) {
-	return n.Selector.WithExpr(n.expr).Select(ctx)
+	n.Selector = n.Selector.WithExpr(n.expr)
+	return n.Selector.Select(ctx)
+}
+
+func (n news) Update(ctx context.Context, news model.UpdateNewsParams) ([]model.News, error) {
+	n.Updater = n.Updater.WithExpr(n.expr)
+
+	news.UpdatedAt = convert.ToPtr(common.CurrentTimestamp())
+	return n.Updater.Update(ctx, news)
 }

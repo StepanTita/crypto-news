@@ -9,9 +9,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"common/data/drivers/postgres/raw_news"
+
 	"common/data/drivers/postgres/channels"
 	"common/data/drivers/postgres/news_channels"
 	"common/data/drivers/postgres/preferences_channel_coins"
+	"common/data/drivers/postgres/titles"
+	"common/data/drivers/postgres/users"
+	"common/data/drivers/postgres/whitelist"
 	"common/data/drivers/redis/kv_provider"
 
 	"common/config"
@@ -29,6 +34,10 @@ type DataProvider interface {
 	NewsCoinsProvider() queriers.NewsCoinsProvider
 	NewsChannelsProvider() queriers.NewsChannelsProvider
 	PreferencesChannelCoinsProvider() queriers.PreferencesChannelCoinsProvider
+	WhitelistProvider() queriers.WhitelistProvider
+	UsersProvider() queriers.UsersProvider
+	TitlesProvider() queriers.TitlesProvider
+	RawNewsProvider() queriers.RawNewsProvider
 
 	InTx(ctx context.Context, fn func(dp DataProvider) error) error
 
@@ -58,6 +67,22 @@ func (d dataProvider) NewsChannelsProvider() queriers.NewsChannelsProvider {
 
 func (d dataProvider) PreferencesChannelCoinsProvider() queriers.PreferencesChannelCoinsProvider {
 	return preferences_channel_coins.New(d.ext(), d.log)
+}
+
+func (d dataProvider) UsersProvider() queriers.UsersProvider {
+	return users.New(d.ext(), d.log)
+}
+
+func (d dataProvider) WhitelistProvider() queriers.WhitelistProvider {
+	return whitelist.New(d.ext(), d.log)
+}
+
+func (d dataProvider) TitlesProvider() queriers.TitlesProvider {
+	return titles.New(d.ext(), d.log)
+}
+
+func (d dataProvider) RawNewsProvider() queriers.RawNewsProvider {
+	return raw_news.New(d.ext(), d.log)
 }
 
 func (d dataProvider) InTx(ctx context.Context, fn func(dp DataProvider) error) error {

@@ -10,7 +10,7 @@ import (
 	"common/config"
 )
 
-var reLocale = regexp.MustCompile(`\[localize\:([a-z\,]*)\:([a-z]+)\]`)
+var reLocale = regexp.MustCompile(`\[localize(\:([a-z\,]*))?\:([a-z\-]+)\]`)
 
 func preprocessingOps(modifiers []string, locale language.Tag) []func(string) string {
 	ops := make([]func(string) string, len(modifiers))
@@ -30,11 +30,14 @@ func PrepareTemplate(localizer config.Localizer, t, locale string) string {
 		return t
 	}
 	for _, match := range reLocale.FindAllStringSubmatch(t, -1) {
-		modifiers := match[1]
-		entity := localizer.Localize(match[2], locale)
-		modOps := preprocessingOps(strings.Split(modifiers, ","), language.Make(locale))
-		for _, op := range modOps {
-			entity = op(entity)
+		modifiers := match[2]
+		entity := localizer.Localize(match[3], locale)
+
+		if modifiers != "" {
+			modOps := preprocessingOps(strings.Split(modifiers, ","), language.Make(locale))
+			for _, op := range modOps {
+				entity = op(entity)
+			}
 		}
 		t = strings.ReplaceAll(t, match[0], entity)
 	}

@@ -1,12 +1,13 @@
 go 1.20
 
 use (
-	gpt
-	parser
 	common
-	migrator
-	telegram-bot
-	twitter-bot
-	templates
+	configuration-bot
+	gpt
 	localization
+	migrator
+	parser
+	telegram-bot
+	templates
+	twitter-bot
 )

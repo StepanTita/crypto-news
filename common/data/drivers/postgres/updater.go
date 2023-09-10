@@ -8,7 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"common"
+	"common/data"
 	"common/data/model"
 	"common/data/queriers"
 )
@@ -35,12 +35,12 @@ func NewUpdater[U, T model.Model](ext sqlx.ExtContext, log *logrus.Entry) Update
 
 		sql: sq.Update(entity.TableName()),
 
-		expr: common.BasicSqlizer,
+		expr: data.BasicSqlizer,
 	}
 }
 
 func (u updater[U, T]) Update(ctx context.Context, entity U) ([]T, error) {
-	u.log.Debug(sq.DebugSqlizer(u.sql.Where(u.expr)))
+	u.log.Debug(sq.DebugSqlizer(u.sql.SetMap(model.ToMap(entity)).Where(u.expr)))
 
 	sql, args, err := u.sql.SetMap(model.ToMap(entity)).Where(u.expr).Suffix("RETURNING *").ToSql()
 	if err != nil {

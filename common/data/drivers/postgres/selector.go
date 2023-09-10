@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"common"
 	"common/data"
 	"common/data/model"
 	"common/data/queriers"
@@ -22,7 +21,9 @@ type Selector[T model.Model] interface {
 
 	Join(to string, on string, args ...interface{}) Selector[T]
 
+	Count(ctx context.Context) (uint64, error)
 	Limit(l uint64) Selector[T]
+	Offset(o uint64) Selector[T]
 	Order(by, order string) Selector[T]
 }
 
@@ -41,7 +42,7 @@ func NewSelector[T model.Model](ext sqlx.ExtContext, log *logrus.Entry, columns 
 		log: log.WithField("service", "[selector]"),
 		ext: ext,
 
-		expr: common.BasicSqlizer,
+		expr: data.BasicSqlizer,
 		sql:  sq.Select(columns...).From(entity.TableName()),
 	}
 }
@@ -78,6 +79,29 @@ func (s selector[T]) Select(ctx context.Context) ([]T, error) {
 	return entities, nil
 }
 
+func (s selector[T]) Count(ctx context.Context) (uint64, error) {
+	var entity T
+
+	s.log.Debug(sq.DebugSqlizer(sq.Select("count(*)").From(entity.TableName()).Where(s.expr)))
+
+	sql, args, err := sq.Select("count(*)").From(entity.TableName()).Where(s.expr).ToSql()
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to build sql insert query")
+	}
+
+	row := s.ext.QueryRowxContext(ctx, s.ext.Rebind(sql), args...)
+	if row.Err() != nil {
+		return 0, errors.Wrapf(err, "failed to select count from table: %s", entity.TableName())
+	}
+
+	var count uint64
+	if err := row.Scan(&count); err != nil {
+		return 0, errors.Wrap(err, "failed to scan count")
+	}
+	
+	return count, nil
+}
+
 func (s selector[T]) WithExpr(expr sq.Sqlizer) Selector[T] {
 	s.expr = expr
 	return s
@@ -90,6 +114,11 @@ func (s selector[T]) Join(to string, on string, args ...interface{}) Selector[T]
 
 func (s selector[T]) Limit(l uint64) Selector[T] {
 	s.sql = s.sql.Limit(l)
+	return s
+}
+
+func (s selector[T]) Offset(o uint64) Selector[T] {
+	s.sql = s.sql.Offset(o)
 	return s
 }
 

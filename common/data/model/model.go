@@ -6,11 +6,11 @@ import (
 
 	"github.com/google/uuid"
 
-	"common"
+	"common/reflection"
 )
 
 type Model interface {
-	News | Coin | Channel | NewsCoin | NewsChannel | PreferencesChannelCoin | UpdateNewsParams
+	News | Coin | Channel | NewsCoin | NewsChannel | PreferencesChannelCoin | UpdateNewsParams | User | Whitelist | Title | UpdateTitleParams | RawNews
 	TableName() string
 }
 
@@ -18,12 +18,12 @@ type Model interface {
 // it omits passed fields, for the sake of valid insertion and generation, it also omits Nil fields,
 // if some value is intended to be set Nil, use sql.Null[Type]
 func ToMap[T Model](v T) map[string]any {
-	return common.StructTagsMap(v, true)
+	return reflection.StructTagsMap(v, true)
 }
 
 // skipNil should be false by default here
 func Columns[T Model](v T, skipNil bool) []string {
-	columnsMap := common.StructTagsMap(v, skipNil)
+	columnsMap := reflection.StructTagsMap(v, skipNil)
 	columns := make([]string, 0, len(columnsMap))
 	for k := range columnsMap {
 		columns = append(columns, k)
@@ -42,7 +42,7 @@ func NamedBinding[T Model](v T) ([]string, []string) {
 }
 
 func ToKey(i any, unique bool) string {
-	basicTypeKey := strings.ReplaceAll(common.GetTypeName(i), ".", "/")
+	basicTypeKey := strings.ReplaceAll(reflection.GetTypeName(i), ".", "/")
 	if unique {
 		return fmt.Sprintf("%s/%s", strings.ReplaceAll(basicTypeKey, ".", "/"), uuid.NewString())
 	}

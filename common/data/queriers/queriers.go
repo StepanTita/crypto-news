@@ -85,6 +85,47 @@ type PreferencesChannelCoinsProvider interface {
 	ByChannel(channelID int64) PreferencesChannelCoinsProvider
 }
 
+type UsersProvider interface {
+	Inserter[model.User]
+	Getter[model.User]
+	Selector[model.User]
+
+	ByUsername(username string) UsersProvider
+}
+
+type WhitelistProvider interface {
+	Inserter[model.Whitelist]
+	Getter[model.Whitelist]
+	Remover[model.Whitelist]
+
+	ByUsername(username string) WhitelistProvider
+	ExtractToken(ctx context.Context, token uuid.UUID) error
+}
+
+type TitlesProvider interface {
+	Inserter[model.Title]
+	Selector[model.Title]
+	Updater[model.UpdateTitleParams, model.Title]
+
+	ByIDs(ids []uuid.UUID) TitlesProvider
+	ByStatus(status ...string) TitlesProvider
+
+	InsertUniqueBatch(ctx context.Context, entities []model.Title) error
+}
+
+type RawNewsProvider interface {
+	Inserter[model.RawNews]
+	Selector[model.RawNews]
+	Remover[model.RawNews]
+
+	ByIDs(ids []uuid.UUID) RawNewsProvider
+
+	Limit(l uint64) RawNewsProvider
+	Offset(o uint64) RawNewsProvider
+	Order(by, order string) RawNewsProvider
+	Count(ctx context.Context) (uint64, error)
+}
+
 // No-SQL
 
 type KVProvider interface {

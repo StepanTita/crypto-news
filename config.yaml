@@ -31,3 +31,7 @@ twitter:
     auth_url: https://twitter.com/i/oauth2/authorize
   api_key: ...
   api_secret: ...
+gpt:
+  generate_every: 1m
+  log_level: debug
+  prompt: "Create a summary with at least 5 the most important news related to cryptocurrencies of the last hour (the more - the better)."

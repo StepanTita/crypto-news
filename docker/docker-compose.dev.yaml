@@ -62,6 +62,22 @@ services:
     restart: always
     entrypoint: /bin/sh
     command: -c "telegram-bot run"
+  configuration-bot:
+    image: stepancons/crypto-news-configuration-bot:dev
+    container_name: configuration-bot-dev
+    networks:
+      - dev
+    volumes:
+      - type: bind
+        source: ./config.docker.dev.yaml
+        target: /config.yaml
+    environment:
+      CONFIG: /config.yaml
+    depends_on:
+      - migrator
+    restart: always
+    entrypoint: /bin/sh
+    command: -c "configuration-bot run"
   #  twitter-bot:
   #    image: stepancons/crypto-news-twitter-bot:latest
   #    container_name: twitter-bot-dev

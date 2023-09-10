@@ -1,6 +1,7 @@
 package connector
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -13,7 +14,8 @@ import (
 )
 
 type Connector interface {
-	Request(ctx context.Context, r RequestParams) (io.ReadCloser, int, error)
+	Post(ctx context.Context, r RequestParams) (io.Reader, int, error)
+	Poll(ctx context.Context, r PollParams) (io.Reader, int, error)
 }
 
 type connector struct {
@@ -31,16 +33,35 @@ func New(cfg config.Config) Connector {
 	}
 }
 
-func (c connector) Request(ctx context.Context, r RequestParams) (io.ReadCloser, int, error) {
+func (c connector) Poll(ctx context.Context, r PollParams) (io.Reader, int, error) {
 	c.log.WithField("params", r.Params.Encode()).Debugf("Requesting, %s%s...", r.Url, r.Path)
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s%s?%s", r.Url, r.Path, r.Params.Encode()), nil)
 	if err != nil {
-		return nil, 0, errors.Wrap(err, "failed to create new request")
+		return nil, 0, errors.Wrap(err, "failed to create new get request")
 	}
 
+	req.Header = r.Headers
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, 0, errors.Wrap(err, "failed to do client request")
+		return nil, 0, errors.Wrap(err, "failed to do get client request")
+	}
+
+	return resp.Body, resp.StatusCode, nil
+}
+
+func (c connector) Post(ctx context.Context, r RequestParams) (io.Reader, int, error) {
+	c.log.WithField("body", string(r.Body)).Debugf("Requesting, %s%s...", r.Url, r.Path)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("%s%s", r.Url, r.Path), bytes.NewReader(r.Body))
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "failed to create new post request")
+	}
+
+	req.Header = r.Headers
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return nil, 0, errors.Wrap(err, "failed to do post client request")
 	}
 
 	return resp.Body, resp.StatusCode, nil

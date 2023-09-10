@@ -69,8 +69,9 @@ func (w worker) work(ctx context.Context, name string) {
 			task.Err = err
 		}
 
-		task.StatusCode = code
 		task.Body = body
+
+		task.StatusCode = code
 		task.handleBy = name
 		task.duration = time.Duration(time.Since(start).Milliseconds())
 
