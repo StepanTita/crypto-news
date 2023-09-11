@@ -39,12 +39,12 @@ func (b *openAIBot) Ask(ctx context.Context, prompt, context string, language st
 					Content: context,
 				},
 				{
-					Role:    openai.ChatMessageRoleSystem,
-					Content: fmt.Sprintf("Your entire reply should be translated to the following language: %s", language),
-				},
-				{
 					Role:    openai.ChatMessageRoleUser,
 					Content: prompt,
+				},
+				{
+					Role:    openai.ChatMessageRoleSystem,
+					Content: fmt.Sprintf("Your entire reply should be translated to the following language: %s", language),
 				},
 			},
 		},
