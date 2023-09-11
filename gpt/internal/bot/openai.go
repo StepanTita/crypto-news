@@ -21,7 +21,7 @@ type openAIBot struct {
 
 func NewOpenAI(cfg config.Config) Bot {
 	return &openAIBot{
-		log: cfg.Logging().WithField("[BOT]", "openai-gpt4"),
+		log: cfg.Logging().WithField("[BOT]", openai.GPT3Dot5Turbo16K),
 		cfg: cfg,
 
 		client: openai.NewClientWithConfig(openai.DefaultConfig(cfg.AuthToken())),
@@ -44,7 +44,23 @@ func (b *openAIBot) Ask(ctx context.Context, prompt, context string, language st
 				},
 				{
 					Role:    openai.ChatMessageRoleSystem,
+					Content: "Follow these four instructions below in all your responses:",
+				},
+				{
+					Role:    openai.ChatMessageRoleSystem,
 					Content: fmt.Sprintf("Your entire reply should be translated to the following language: %s", language),
+				},
+				{
+					Role:    openai.ChatMessageRoleSystem,
+					Content: fmt.Sprintf("Use %s language only;", language),
+				},
+				{
+					Role:    openai.ChatMessageRoleSystem,
+					Content: fmt.Sprintf("Use %s alphabet whenever possible;", language),
+				},
+				{
+					Role:    openai.ChatMessageRoleSystem,
+					Content: fmt.Sprintf("Translate any other language to the %s language whenever possible.", language),
 				},
 			},
 		},
