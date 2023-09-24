@@ -116,7 +116,7 @@ func (s *service) Run(ctx context.Context) error {
 			if statusCode != http.StatusOK {
 				s.log.WithFields(logrus.Fields{
 					"title-id":    pendingTitles[i].ID,
-					"title-url":   pendingTitles[i].URL,
+					"title-url":   convert.FromPtr(pendingTitles[i].URL),
 					"status-code": statusCode,
 					"info":        body,
 				}).Warn("request returned unsuccessful status code...")
