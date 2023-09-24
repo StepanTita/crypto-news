@@ -179,7 +179,7 @@ func (p poster) buildMessage(channelID int64, news model.News, coins []model.Coi
 		escapeKeepingHTML(body),
 		escapeKeepingHTML(references.String()),
 		escapeKeepingHTML(coinsHashTags.String()),
-		escapeKeepingHTML(convert.FromPtr(news.Source)),
+		//escapeKeepingHTML(convert.FromPtr(news.Source)),
 	))
 
 	if len(images) == 1 {
