@@ -177,7 +177,7 @@ func (p poster) buildMessage(channelID int64, news model.News, coins []model.Coi
 	msg.Text = transform.CleanUnsupportedHTML(fmt.Sprintf(locale.PrepareTemplate(p.cfg, rawTemplate, convert.FromPtr(news.Locale)),
 		escapeKeepingHTML(convert.FromPtr(news.Media.Title)),
 		escapeKeepingHTML(body),
-		escapeKeepingHTML(references.String()),
+		//escapeKeepingHTML(references.String()),
 		escapeKeepingHTML(coinsHashTags.String()),
 		//escapeKeepingHTML(convert.FromPtr(news.Source)),
 	))
